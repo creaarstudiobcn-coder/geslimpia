@@ -1,0 +1,28 @@
+# Postgres local para desarrollo de GesLimpia.
+# Arranca con:  docker compose up -d
+# Para con:     docker compose down   (añade -v para borrar también los datos)
+#
+# La cadena de conexión correspondiente para tu .env es:
+#   DATABASE_URL="postgresql://geslimpia:geslimpia@localhost:5432/geslimpia?schema=public"
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: geslimpia-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: geslimpia
+      POSTGRES_PASSWORD: geslimpia
+      POSTGRES_DB: geslimpia
+    ports:
+      - "5432:5432"
+    volumes:
+      - geslimpia_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U geslimpia -d geslimpia"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  geslimpia_pgdata:

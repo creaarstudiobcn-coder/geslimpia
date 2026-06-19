@@ -13,14 +13,19 @@
 ## Stack
 
 - **Next.js 14** (App Router) + **TypeScript** + **Tailwind CSS**
-- **Prisma** + **SQLite** (desarrollo) / **PostgreSQL** (producción)
+- **Prisma** + **PostgreSQL** (mismo motor en desarrollo y producción)
 - **NextAuth** (credenciales email/contraseña) con dos roles: `HOGAR` y `LIMPIADORA`
-- **Stripe** (modo test) para las suscripciones — Plan Básico 29,99 €/mes y Plan Completo 69 €/mes
+- **Stripe** para las suscripciones — Plan Básico 29,99 €/mes y Plan Completo 69 €/mes
 - Pensado para desplegar en **Vercel**
 
 ---
 
-## Instalación
+## Instalación (desarrollo local con Postgres)
+
+El proyecto usa PostgreSQL también en local. Tienes **dos opciones** para tener
+una base de datos de desarrollo; elige una.
+
+### Opción A — Postgres local con Docker (recomendada)
 
 ```bash
 # 1. Instalar dependencias
@@ -28,15 +33,33 @@ npm install
 
 # 2. Configurar variables de entorno
 cp .env.example .env
-# (en desarrollo el .env por defecto ya usa SQLite y un secreto de prueba)
+# El .env.example ya trae la DATABASE_URL correcta para el Postgres de Docker.
 
-# 3. Crear la base de datos y generar el cliente Prisma
-npm run db:push
+# 3. Levantar Postgres en segundo plano
+docker compose up -d
 
-# 4. Cargar datos de ejemplo (8 limpiadoras + 1 hogar demo)
+# 4. Aplicar las migraciones y generar el cliente Prisma
+npm run db:migrate          # prisma migrate dev
+
+# 5. Cargar datos de ejemplo (8 limpiadoras + 1 hogar demo)
 npm run db:seed
 
-# 5. Arrancar en desarrollo
+# 6. Arrancar en desarrollo
+npm run dev
+```
+
+### Opción B — Neon (Postgres en la nube, sin Docker)
+
+```bash
+npm install
+cp .env.example .env
+
+# 1. Crea un proyecto gratis en https://neon.tech y copia su connection string.
+# 2. Pégala en DATABASE_URL dentro de .env, p.ej.:
+#    DATABASE_URL="postgresql://USER:PASSWORD@HOST/neondb?sslmode=require"
+
+npm run db:migrate
+npm run db:seed
 npm run dev
 ```
 
@@ -94,10 +117,13 @@ Tarjeta de prueba: `4242 4242 4242 4242`, cualquier fecha futura y CVC.
 |--------|--------|
 | `npm run dev` | Servidor de desarrollo |
 | `npm run build` | Build de producción (`prisma generate` + `next build`) |
+| `npm run vercel-build` | Build que usa Vercel: aplica migraciones (`migrate deploy`) y construye |
 | `npm run start` | Servidor de producción |
-| `npm run db:push` | Aplica el esquema Prisma a la base de datos |
+| `npm run db:migrate` | Crea/aplica migraciones en desarrollo (`prisma migrate dev`) |
+| `npm run db:deploy` | Aplica migraciones pendientes en producción (`prisma migrate deploy`) |
+| `npm run db:push` | Sincroniza el esquema sin migración (prototipado rápido) |
 | `npm run db:seed` | Carga datos de ejemplo |
-| `npm run db:reset` | Resetea la base de datos y vuelve a sembrar |
+| `npm run db:reset` | Resetea la base de datos, aplica migraciones y vuelve a sembrar |
 
 ---
 
@@ -131,27 +157,101 @@ prisma/
 
 `User` · `CleanerProfile` · `Subscription` · `Booking` · `Message` · `Review` · `Favorite`
 
-> En SQLite los enums y arrays no son nativos: los "enums" se guardan como `String`
-> con valores documentados y las listas (servicios, zonas) como **JSON string**
-> (ver helpers `parseList` / `stringifyList` en `src/lib/constants.ts`).
+> Decisión de diseño: los "enums" se guardan como `String` con valores documentados
+> (`HOGAR`/`LIMPIADORA`, `ACTIVA`/`PENDIENTE`/`CANCELADA`, …) en lugar de enums
+> nativos de Postgres, porque la app compara strings literales en muchos sitios. Las
+> listas (servicios, zonas) se guardan como **JSON string** (ver helpers
+> `parseList` / `stringifyList` en `src/lib/constants.ts`).
 
 ---
 
-## Despliegue en Vercel
+## Despliegue en producción (Vercel + Postgres + Stripe)
 
-1. Sube el repositorio a GitHub e impórtalo en Vercel.
-2. Cambia el `datasource` de Prisma a **PostgreSQL** y usa una base de datos gestionada (Vercel Postgres, Supabase o Neon):
+Guía paso a paso. El esquema ya usa `provider = "postgresql"` y hay una migración
+inicial en `prisma/migrations/`, así que no hay que tocar el código.
 
-   ```prisma
-   datasource db {
-     provider = "postgresql"
-     url      = env("DATABASE_URL")
-   }
-   ```
+### 1. Crear la base de datos Postgres
 
-3. Configura **todas** las variables de entorno del `.env.example` en el panel de Vercel (con las claves reales de Stripe).
-4. En Stripe, crea un **webhook** que apunte a `https://TU-DOMINIO/api/stripe/webhook` y guarda su secreto en `STRIPE_WEBHOOK_SECRET`.
-5. El `build` ya ejecuta `prisma generate`. Tras el primer deploy, aplica el esquema con `prisma db push` (o migraciones) contra la base de datos de producción.
+Elige un proveedor y copia su **connection string** (será tu `DATABASE_URL`):
+
+- **Vercel Postgres**: en el dashboard de Vercel → *Storage* → *Create Database* → Postgres.
+  Vercel inyecta las variables automáticamente al proyecto vinculado.
+- **Neon**: crea un proyecto en [neon.tech](https://neon.tech) y copia la cadena
+  (incluye `?sslmode=require`).
+- **Supabase**: *Project Settings → Database → Connection string* (modo *Session*).
+
+### 2. Subir a GitHub e importar en Vercel
+
+1. Sube el repo a GitHub (ya hecho si seguiste la guía).
+2. En [vercel.com/new](https://vercel.com/new) → *Import* el repositorio.
+3. Framework: **Next.js** (autodetectado). No cambies el *Build Command*: Vercel
+   usará automáticamente el script **`vercel-build`** del `package.json`, que ejecuta
+   `prisma migrate deploy` (aplica las migraciones a la BD de producción) antes de
+   `next build`. No necesitas configurar nada más de build.
+
+### 3. Configurar las variables de entorno en Vercel
+
+En *Project → Settings → Environment Variables*, añade (entorno **Production**):
+
+| Variable | Valor |
+|----------|-------|
+| `DATABASE_URL` | La cadena del paso 1 (con `?sslmode=require` si aplica) |
+| `NEXTAUTH_SECRET` | `openssl rand -base64 32` |
+| `NEXTAUTH_URL` | `https://TU-DOMINIO` |
+| `NEXT_PUBLIC_APP_URL` | `https://TU-DOMINIO` |
+| `STRIPE_SECRET_KEY` | `sk_live_...` (paso 4) |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | `pk_live_...` (paso 4) |
+| `STRIPE_WEBHOOK_SECRET` | `whsec_...` (paso 5) |
+| `STRIPE_PRICE_BASICO` | `price_...` del plan Básico (paso 4) |
+| `STRIPE_PRICE_COMPLETO` | `price_...` del plan Completo (paso 4) |
+
+> Si dejas las claves de Stripe sin rellenar, la app arranca igual pero el checkout
+> funciona en **modo demo** (sin cobro). Para cobrar de verdad, completa los pasos 4 y 5.
+
+### 4. Crear los productos y precios en Stripe (modo live)
+
+1. Pasa el dashboard a **modo live** (toggle arriba a la derecha).
+2. *Products* → crea dos productos con **precio recurrente mensual**:
+   - **Básico**: 29,99 € / mes → copia el **Price ID** (`price_...`) a `STRIPE_PRICE_BASICO`.
+   - **Completo**: 69,00 € / mes → copia el **Price ID** a `STRIPE_PRICE_COMPLETO`.
+3. *Developers → API keys*: copia `sk_live_...` y `pk_live_...` a las variables.
+
+### 5. Configurar el webhook de Stripe
+
+1. *Developers → Webhooks → Add endpoint*.
+2. URL: `https://TU-DOMINIO/api/stripe/webhook`
+3. Selecciona estos eventos:
+   - `checkout.session.completed`
+   - `invoice.payment_succeeded`
+   - `invoice.payment_failed`
+   - `customer.subscription.updated`
+   - `customer.subscription.deleted`
+4. Copia el **Signing secret** (`whsec_...`) a `STRIPE_WEBHOOK_SECRET` en Vercel y
+   vuelve a desplegar (*Redeploy*) para que tome la variable.
+
+### 6. Dominio propio
+
+1. En *Project → Settings → Domains*, añade tu dominio (p.ej. `geslimpia.es`).
+2. En tu proveedor DNS, crea los registros que indica Vercel:
+   - Apex (`geslimpia.es`): registro **A** → `76.76.21.21` (o el que muestre Vercel).
+   - `www`: registro **CNAME** → `cname.vercel-dns.com`.
+3. Cuando el dominio esté verificado, actualiza `NEXTAUTH_URL` y `NEXT_PUBLIC_APP_URL`
+   a `https://TU-DOMINIO` y vuelve a desplegar.
+
+### 7. Datos iniciales en producción
+
+Las migraciones se aplican solas en cada deploy (`vercel-build`). Para los datos:
+
+- **Opción A — sembrar datos demo** (8 limpiadoras + 1 hogar). Desde tu máquina,
+  apuntando a la BD de producción (¡cuidado, el seed borra los datos existentes!):
+
+  ```bash
+  DATABASE_URL="<cadena_de_produccion>" npm run db:seed
+  ```
+
+- **Opción B — empezar vacío**: no ejecutes el seed. El primer usuario se crea
+  desde la propia web en `/register`. Las limpiadoras completan su perfil en el
+  onboarding tras registrarse.
 
 ---
 
