@@ -1,0 +1,122 @@
+// GesLimpia — esquema de datos
+// Base de datos: PostgreSQL (mismo provider en desarrollo y producción).
+//   - Desarrollo: Postgres local vía Docker (docker-compose.yml) o una URL de Neon
+//     de desarrollo. Ver README → "Desarrollo local con Postgres".
+//   - Producción: Vercel Postgres / Neon / Supabase. Migraciones con `prisma migrate deploy`.
+//
+// Decisión de diseño: los "enums" se modelan como String con un conjunto de valores
+// documentado (no enums nativos de Postgres), porque el código de la app compara
+// strings literales ("HOGAR", "ACTIVA", …) en muchos sitios. Las listas (servicios,
+// zonas) se guardan como texto JSON (ver helpers parseList/stringifyList en
+// src/lib/constants.ts). Ambas elecciones son válidas y portables en Postgres.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String // "HOGAR" | "LIMPIADORA"
+  ciudad       String
+  createdAt    DateTime @default(now())
+
+  cleanerProfile CleanerProfile?
+  subscription   Subscription?
+
+  bookingsAsHome    Booking[] @relation("HomeBookings")
+  bookingsAsCleaner Booking[] @relation("CleanerBookings")
+
+  messages Message[]
+
+  reviewsWritten  Review[] @relation("ReviewAuthor")
+  reviewsReceived Review[] @relation("ReviewCleaner")
+
+  favorites Favorite[] @relation("FavoriteHome")
+  favoredBy Favorite[] @relation("FavoriteCleaner")
+}
+
+model CleanerProfile {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bio           String   @default("")
+  hourlyRate    Float    @default(12)
+  services      String   @default("[]") // JSON string[]
+  zones         String   @default("[]") // JSON string[]
+  availability  String   @default("") // texto libre, p.ej. "L-V mañanas"
+  photoUrl      String   @default("")
+  disponibleHoy Boolean  @default(true)
+  ratingAvg     Float    @default(0)
+  ratingCount   Int      @default(0)
+  onboarded     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+}
+
+model Subscription {
+  id                   String    @id @default(cuid())
+  userId               String    @unique
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan                 String // "BASICO" | "COMPLETO"
+  status               String    @default("PENDIENTE") // "PENDIENTE" | "ACTIVA" | "CANCELADA"
+  contactsUsed         Int       @default(0)
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  currentPeriodEnd     DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+}
+
+model Booking {
+  id            String   @id @default(cuid())
+  homeUserId    String
+  homeUser      User     @relation("HomeBookings", fields: [homeUserId], references: [id], onDelete: Cascade)
+  cleanerUserId String
+  cleanerUser   User     @relation("CleanerBookings", fields: [cleanerUserId], references: [id], onDelete: Cascade)
+  date          DateTime
+  hours         Float    @default(2)
+  status        String   @default("PENDIENTE") // "PENDIENTE" | "ACEPTADA" | "RECHAZADA" | "COMPLETADA"
+  notes         String   @default("")
+  createdAt     DateTime @default(now())
+
+  messages Message[]
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  bookingId String
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  body      String
+  createdAt DateTime @default(now())
+}
+
+model Review {
+  id            String   @id @default(cuid())
+  cleanerUserId String
+  cleanerUser   User     @relation("ReviewCleaner", fields: [cleanerUserId], references: [id], onDelete: Cascade)
+  homeUserId    String
+  homeUser      User     @relation("ReviewAuthor", fields: [homeUserId], references: [id], onDelete: Cascade)
+  rating        Int
+  comment       String   @default("")
+  createdAt     DateTime @default(now())
+}
+
+model Favorite {
+  id            String   @id @default(cuid())
+  homeUserId    String
+  homeUser      User     @relation("FavoriteHome", fields: [homeUserId], references: [id], onDelete: Cascade)
+  cleanerUserId String
+  cleanerUser   User     @relation("FavoriteCleaner", fields: [cleanerUserId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+
+  @@unique([homeUserId, cleanerUserId])
+}

@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-white text-petroleo antialiased;
+}
+
+/* Accesibilidad: foco visible */
+*:focus-visible {
+  outline: 3px solid #129bc9;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 font-semibold transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed;
+  }
+  .btn-primary {
+    @apply btn bg-agua text-white shadow-soft hover:bg-[#0f86ad] active:scale-[0.98];
+  }
+  .btn-secondary {
+    @apply btn bg-menta text-petroleo hover:bg-[#27ab93] active:scale-[0.98];
+  }
+  .btn-outline {
+    @apply btn border-2 border-agua text-agua hover:bg-espuma;
+  }
+  .btn-ghost {
+    @apply btn text-petroleo hover:bg-espuma;
+  }
+  .input {
+    @apply w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-petroleo placeholder:text-slate-400 focus:border-agua focus:ring-0;
+  }
+  .label {
+    @apply mb-1.5 block text-sm font-medium text-petroleo;
+  }
+  .card {
+    @apply rounded-2xl border border-slate-100 bg-white shadow-card;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full bg-espuma px-3 py-1 text-xs font-medium text-petroleo;
+  }
+  .container-page {
+    @apply mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8;
+  }
+}
