@@ -42,6 +42,9 @@ function LoginForm() {
         <input
           id="email"
           type="email"
+          inputMode="email"
+          autoComplete="email"
+          autoCapitalize="none"
           required
           className="input"
           value={email}
@@ -56,6 +59,7 @@ function LoginForm() {
         <input
           id="password"
           type="password"
+          autoComplete="current-password"
           required
           className="input"
           value={password}

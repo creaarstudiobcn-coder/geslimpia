@@ -98,6 +98,7 @@ function RegisterForm() {
         </label>
         <input
           id="name"
+          autoComplete="name"
           required
           className="input"
           value={name}
@@ -112,6 +113,9 @@ function RegisterForm() {
         <input
           id="email"
           type="email"
+          inputMode="email"
+          autoComplete="email"
+          autoCapitalize="none"
           required
           className="input"
           value={email}
@@ -143,6 +147,7 @@ function RegisterForm() {
         <input
           id="password"
           type="password"
+          autoComplete="new-password"
           required
           minLength={6}
           className="input"

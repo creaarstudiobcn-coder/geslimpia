@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { PLANES } from "@/lib/constants";
@@ -34,21 +35,36 @@ export default function HomePage() {
       <SiteHeader />
 
       <main>
-        {/* HERO */}
-        <section className="relative overflow-hidden bg-gradient-to-b from-espuma to-white">
-          <div className="container-page grid items-center gap-10 py-16 lg:grid-cols-2 lg:py-24">
-            <div className="animate-fade-up">
-              <span className="chip mb-5 bg-white shadow-card">
+        {/* HERO — imagen de fondo full-bleed con zoom en hover (no táctil) */}
+        <section className="group relative isolate overflow-hidden">
+          {/* Imagen de fondo a ancho completo. next/image genera AVIF/WebP responsivos. */}
+          <Image
+            src="/images/limpiadora-hero.jpg"
+            alt="Limpiadora profesional sonriente, lista para ayudarte en casa"
+            fill
+            priority
+            sizes="100vw"
+            className="-z-20 object-cover object-[78%_center] transition-transform duration-700 ease-out [@media(hover:hover)]:group-hover:scale-105 motion-reduce:!transform-none motion-reduce:!transition-none"
+          />
+          {/* Overlay para contraste AA del texto: más oscuro a la izquierda (donde va el texto). */}
+          <div className="absolute inset-0 -z-10 bg-gradient-to-r from-petroleo/90 via-petroleo/60 to-petroleo/20 sm:to-transparent" />
+
+          <div className="container-page flex min-h-[32rem] items-center py-20 lg:min-h-[40rem]">
+            <div className="max-w-xl animate-fade-up">
+              <span className="chip mb-5 bg-white/90 shadow-card backdrop-blur">
                 ✨ Mataró i el Maresme
               </span>
-              <h1 className="text-4xl font-bold leading-tight tracking-tight text-petroleo sm:text-5xl">
+              <h1 className="text-4xl font-bold leading-tight tracking-tight text-white drop-shadow sm:text-5xl">
                 Encuentra limpiadora de confianza{" "}
-                <span className="text-agua">cerca de ti</span>
+                <span className="text-menta">cerca de ti</span>
               </h1>
-              <p className="mt-5 max-w-xl text-lg text-slate-600">
+              <p className="mt-5 max-w-lg text-lg text-white/90 drop-shadow">
                 Te conectamos con limpiadoras profesionales{" "}
-                <strong>independientes</strong> de tu zona. Tú eliges, contactas
-                por chat y acordáis los detalles directamente.
+                <strong className="font-semibold text-white">
+                  independientes
+                </strong>{" "}
+                de tu zona. Tú eliges, contactas por chat y acordáis los detalles
+                directamente.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link
@@ -64,44 +80,10 @@ export default function HomePage() {
                   🧽 Soy limpiadora
                 </Link>
               </div>
-              <p className="mt-4 text-sm text-slate-500">
-                Las limpiadoras se registran <strong>gratis</strong>. Sin
-                permanencia.
+              <p className="mt-4 text-sm text-white/80">
+                Las limpiadoras se registran{" "}
+                <strong className="text-white">gratis</strong>. Sin permanencia.
               </p>
-            </div>
-
-            {/* Tarjeta decorativa */}
-            <div className="relative animate-fade-up">
-              <div className="card mx-auto max-w-md p-6">
-                <div className="flex items-center gap-3">
-                  <div className="grid h-12 w-12 place-items-center rounded-full bg-menta/20 text-xl">
-                    🧹
-                  </div>
-                  <div>
-                    <p className="font-semibold text-petroleo">Marta G.</p>
-                    <p className="text-sm text-slate-500">Mataró · ★ 4,9 (32)</p>
-                  </div>
-                  <span className="ml-auto rounded-full bg-menta/15 px-2.5 py-1 text-xs font-medium text-[#1f8a76]">
-                    Disponible hoy
-                  </span>
-                </div>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <span className="chip">🏠 Hogar</span>
-                  <span className="chip">🪟 Cristales</span>
-                  <span className="chip">✨ A fondo</span>
-                </div>
-                <div className="mt-4 flex items-center justify-between rounded-xl bg-espuma p-4">
-                  <div>
-                    <p className="text-xs text-slate-500">Tarifa que fija ella</p>
-                    <p className="text-lg font-bold text-petroleo">14 €/h</p>
-                  </div>
-                  <span className="btn-primary pointer-events-none text-sm">
-                    Contactar
-                  </span>
-                </div>
-              </div>
-              <div className="absolute -right-4 -top-4 -z-10 h-32 w-32 rounded-full bg-agua/20 blur-2xl" />
-              <div className="absolute -bottom-6 -left-6 -z-10 h-32 w-32 rounded-full bg-menta/20 blur-2xl" />
             </div>
           </div>
         </section>
