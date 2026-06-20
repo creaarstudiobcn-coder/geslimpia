@@ -1,12 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { POBLACIONES } from "@/lib/constants";
 
 export default function RolePicker({ defaultCiudad }: { defaultCiudad: string }) {
-  const router = useRouter();
   const { update } = useSession();
   const [role, setRole] = useState<"HOGAR" | "LIMPIADORA">("HOGAR");
   const [ciudad, setCiudad] = useState<string>(
@@ -35,12 +33,11 @@ export default function RolePicker({ defaultCiudad }: { defaultCiudad: string })
       }
       // Refresca el JWT para que el rol viaje en el token (y el middleware lo deje pasar).
       await update();
-      if (role === "LIMPIADORA") {
-        router.push("/onboarding");
-      } else {
-        router.push("/suscripcion");
-      }
-      router.refresh();
+      // Navegación DURA (no router.push): garantiza que el middleware reciba la cookie
+      // ya con el rol refrescado. Con navegación de cliente podría leer el token antiguo
+      // (rol null) y rebotar de nuevo a /onboarding/rol → bucle.
+      const dest = role === "LIMPIADORA" ? "/onboarding" : "/suscripcion";
+      window.location.assign(dest);
     } catch {
       setError("Error de conexión. Inténtalo de nuevo.");
       setLoading(false);

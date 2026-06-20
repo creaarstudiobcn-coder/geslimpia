@@ -8,8 +8,10 @@ export const metadata = { title: "Elige tu rol · GesLimpia" };
 export default async function ElegirRolPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  // Si ya tiene rol, no hay nada que elegir.
-  if (user.role) redirect("/dashboard");
+  // NOTA: el redirect "ya tiene rol → /dashboard" lo hace SOLO el middleware (que lee
+  // el rol del token JWT). No lo repetimos aquí leyendo la BD: si la página redirige por
+  // rol-en-BD mientras el token aún dice null, se produce un bucle middleware↔página.
+  // Dejando que el middleware sea la única autoridad, ambas fuentes nunca se contradicen.
 
   return (
     <main className="grid min-h-screen place-items-center bg-espuma px-4 py-12">
