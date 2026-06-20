@@ -305,3 +305,6 @@ Las migraciones se aplican solas en cada deploy (`vercel-build`). Para los datos
 ## Nota legal
 
 Los textos legales (`/terminos`, `/privacidad`, `/cookies`, `/aviso-legal`) son **orientativos**. El texto legal definitivo debe redactarlo un profesional. En todos ellos se recalca que GesLimpia es una **plataforma de conexión**, que **no emplea** a las limpiadoras y que **no presta** el servicio de limpieza.
+
+<!-- Despliegue: versión con login con Google (NextAuth). -->
+
