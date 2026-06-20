@@ -31,7 +31,7 @@ export default async function DashboardHome({
           bookings={bookings.map((b) => ({
             id: b.id,
             homeName: b.homeUser.name,
-            homeCity: b.homeUser.ciudad,
+            homeCity: b.homeUser.ciudad ?? "",
             date: b.date.toISOString(),
             hours: b.hours,
             status: b.status,
@@ -100,7 +100,7 @@ export default async function DashboardHome({
     .map((c) => ({
       userId: c.userId,
       name: c.user.name,
-      ciudad: c.user.ciudad,
+      ciudad: c.user.ciudad ?? "",
       bio: c.bio,
       hourlyRate: c.hourlyRate,
       services: parseList(c.services),

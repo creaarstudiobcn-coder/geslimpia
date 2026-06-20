@@ -5,6 +5,7 @@ import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Logo from "@/components/Logo";
+import GoogleButton from "@/components/GoogleButton";
 
 function LoginForm() {
   const router = useRouter();
@@ -91,6 +92,7 @@ export default function LoginPage() {
               <LoginForm />
             </Suspense>
           </div>
+          <GoogleButton callbackUrl="/dashboard" />
           <p className="mt-6 text-center text-sm text-slate-600">
             ¿No tienes cuenta?{" "}
             <Link href="/register" className="font-semibold text-agua">

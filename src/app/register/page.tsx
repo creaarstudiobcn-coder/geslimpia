@@ -5,6 +5,7 @@ import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Logo from "@/components/Logo";
+import GoogleButton from "@/components/GoogleButton";
 import { POBLACIONES } from "@/lib/constants";
 
 function RegisterForm() {
@@ -187,6 +188,7 @@ export default function RegisterPage() {
               <RegisterForm />
             </Suspense>
           </div>
+          <GoogleButton callbackUrl="/dashboard" />
           <p className="mt-6 text-center text-sm text-slate-600">
             ¿Ya tienes cuenta?{" "}
             <Link href="/login" className="font-semibold text-agua">

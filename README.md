@@ -85,6 +85,8 @@ Ver `.env.example`. Resumen:
 | `DATABASE_URL` | Cadena de conexión PostgreSQL (Docker/Neon en dev, Vercel/Neon/Supabase en prod) |
 | `NEXTAUTH_SECRET` | Secreto para firmar las sesiones (`openssl rand -base64 32`) |
 | `NEXTAUTH_URL` | URL base de la app |
+| `GOOGLE_CLIENT_ID` | (Opcional) Client ID de OAuth de Google. Si falta, se oculta el login con Google |
+| `GOOGLE_CLIENT_SECRET` | (Opcional) Client Secret de OAuth de Google |
 | `STRIPE_SECRET_KEY` | Clave secreta de Stripe (modo test) |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Clave pública de Stripe |
 | `STRIPE_WEBHOOK_SECRET` | Secreto del webhook de Stripe |
@@ -108,6 +110,45 @@ stripe listen --forward-to localhost:3000/api/stripe/webhook
 ```
 
 Tarjeta de prueba: `4242 4242 4242 4242`, cualquier fecha futura y CVC.
+
+---
+
+## Login con Google (OAuth)
+
+Además del email/contraseña, los usuarios pueden entrar con su cuenta de Google.
+Es **opcional**: si no configuras las credenciales, el botón "Continuar con Google"
+simplemente no aparece y la app funciona con email/contraseña.
+
+### Cómo funciona (resumen técnico)
+
+- Estrategia **JWT** de NextAuth, **sin** Prisma adapter (no hay tablas `Account`/`Session`).
+  Esto mantiene intacto el login de credenciales, que en NextAuth solo es compatible con JWT.
+- La cuenta de Google se **crea/vincula a mano** en el callback `signIn`, buscando el
+  `User` por email. Si el email ya existía (p. ej. cuenta con contraseña), **se vincula
+  automáticamente** (Google verifica el email), de modo que la cuenta queda con ambos métodos.
+- Como con Google no se elige rol en el registro, la primera vez que alguien entra y
+  **aún no tiene rol** se le redirige a **`/onboarding/rol`** (Hogar / Limpiadora + población).
+  Hasta que no elige rol, el `middleware.ts` no le deja entrar al resto de la app.
+  Tras elegir: Hogar → flujo de suscripción; Limpiadora → onboarding de perfil.
+
+### Crear las credenciales en Google Cloud
+
+1. Entra en [Google Cloud Console](https://console.cloud.google.com/) y crea (o elige) un proyecto.
+2. *APIs & Services → OAuth consent screen*: configura la pantalla de consentimiento
+   (tipo **External**, nombre de la app, email de soporte). En desarrollo puedes dejarla
+   en modo *Testing* y añadir tu cuenta como *test user*.
+3. *APIs & Services → Credentials → Create Credentials → OAuth client ID*.
+4. Tipo de aplicación: **Web application**.
+5. **Authorized redirect URIs** — añade una por cada entorno donde uses la app:
+   - Local: `http://localhost:3000/api/auth/callback/google`
+   - Producción: `https://TU-DOMINIO/api/auth/callback/google`
+   (La ruta `/api/auth/callback/google` la gestiona NextAuth automáticamente.)
+6. Copia el **Client ID** y el **Client Secret** a `GOOGLE_CLIENT_ID` y
+   `GOOGLE_CLIENT_SECRET` en tu `.env` (y en Vercel para producción).
+
+> Cuando pases la pantalla de consentimiento a *Production* en Google, cualquier
+> cuenta de Google podrá iniciar sesión; en *Testing* solo las cuentas que añadas
+> como *test users*.
 
 ---
 
@@ -204,9 +245,15 @@ En *Project → Settings → Environment Variables*, añade (entorno **Productio
 | `STRIPE_WEBHOOK_SECRET` | `whsec_...` (paso 5) |
 | `STRIPE_PRICE_BASICO` | `price_...` del plan Básico (paso 4) |
 | `STRIPE_PRICE_COMPLETO` | `price_...` del plan Completo (paso 4) |
+| `GOOGLE_CLIENT_ID` | (Opcional) Client ID de OAuth de Google — ver "Login con Google" |
+| `GOOGLE_CLIENT_SECRET` | (Opcional) Client Secret de OAuth de Google |
 
 > Si dejas las claves de Stripe sin rellenar, la app arranca igual pero el checkout
 > funciona en **modo demo** (sin cobro). Para cobrar de verdad, completa los pasos 4 y 5.
+>
+> Para el login con Google en producción, añade `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`
+> y registra el redirect URI `https://TU-DOMINIO/api/auth/callback/google` en Google Cloud
+> (ver sección "Login con Google"). Si los dejas vacíos, el botón de Google no se muestra.
 
 ### 4. Crear los productos y precios en Stripe (modo live)
 
