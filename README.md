@@ -82,7 +82,7 @@ Ver `.env.example`. Resumen:
 
 | Variable | Descripción |
 |----------|-------------|
-| `DATABASE_URL` | SQLite en dev (`file:./dev.db`) o PostgreSQL en producción |
+| `DATABASE_URL` | Cadena de conexión PostgreSQL (Docker/Neon en dev, Vercel/Neon/Supabase en prod) |
 | `NEXTAUTH_SECRET` | Secreto para firmar las sesiones (`openssl rand -base64 32`) |
 | `NEXTAUTH_URL` | URL base de la app |
 | `STRIPE_SECRET_KEY` | Clave secreta de Stripe (modo test) |
