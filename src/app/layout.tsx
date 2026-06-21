@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
+import CookieConsent from "@/components/cookies/CookieConsent";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -57,6 +58,7 @@ export default function RootLayout({
       <body>
         <Providers>{children}</Providers>
         <ServiceWorkerRegister />
+        <CookieConsent />
       </body>
     </html>
   );

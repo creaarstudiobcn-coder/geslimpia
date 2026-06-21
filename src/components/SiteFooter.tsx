@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Logo from "./Logo";
+import CookieSettingsButton from "./cookies/CookieSettingsButton";
 
 export default function SiteFooter() {
   return (
@@ -67,6 +68,9 @@ export default function SiteFooter() {
                 <Link href="/aviso-legal" className="hover:text-menta">
                   Aviso legal
                 </Link>
+              </li>
+              <li>
+                <CookieSettingsButton className="text-left hover:text-menta" />
               </li>
             </ul>
           </div>
