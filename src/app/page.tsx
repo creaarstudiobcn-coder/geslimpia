@@ -2,32 +2,11 @@ import Link from "next/link";
 import Image from "next/image";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import {
+  FamiliasSection,
+  LimpiadorasSection,
+} from "@/components/home/AudienceSections";
 import { PLANES } from "@/lib/constants";
-
-const PASOS = [
-  {
-    emoji: "💳",
-    titulo: "Elige tu plan",
-    texto:
-      "Suscríbete al plan de acceso que mejor encaje contigo. La cuota es por usar la plataforma.",
-  },
-  {
-    emoji: "📅",
-    titulo: "Reserva una visita",
-    texto: "Busca limpiadoras de tu zona y propón un día y una hora.",
-  },
-  {
-    emoji: "💬",
-    titulo: "Contacta y acuerda",
-    texto:
-      "Habla por el chat, conoce su tarifa y acordáis directamente los detalles.",
-  },
-  {
-    emoji: "🏠",
-    titulo: "Limpieza en casa",
-    texto: "La limpiadora va a tu hogar. El precio de la limpieza lo pagas a ella.",
-  },
-];
 
 export default function HomePage() {
   return (
@@ -101,35 +80,8 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* CÓMO FUNCIONA */}
-        <section className="container-page py-16">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-petroleo">
-              Cómo funciona
-            </h2>
-            <p className="mt-3 text-slate-600">
-              En cuatro pasos sencillos tienes tu hogar reluciente.
-            </p>
-          </div>
-          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {PASOS.map((p, i) => (
-              <div key={p.titulo} className="card p-6">
-                <div className="mb-4 flex items-center gap-3">
-                  <span className="grid h-12 w-12 place-items-center rounded-xl bg-espuma text-2xl">
-                    {p.emoji}
-                  </span>
-                  <span className="text-sm font-bold text-agua">
-                    Paso {i + 1}
-                  </span>
-                </div>
-                <h3 className="text-lg font-semibold text-petroleo">
-                  {p.titulo}
-                </h3>
-                <p className="mt-2 text-sm text-slate-600">{p.texto}</p>
-              </div>
-            ))}
-          </div>
-        </section>
+        {/* SECCIÓN A — Para las familias / hogares (animada) */}
+        <FamiliasSection />
 
         {/* PLANES */}
         <section id="planes" className="bg-espuma/60 py-16">
@@ -195,6 +147,9 @@ export default function HomePage() {
             </p>
           </div>
         </section>
+
+        {/* SECCIÓN B — Para las limpiadoras (animada) */}
+        <LimpiadorasSection />
 
         {/* CTA LIMPIADORAS */}
         <section className="container-page py-16">
