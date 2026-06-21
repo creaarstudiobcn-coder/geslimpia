@@ -7,10 +7,26 @@ import {
   LimpiadorasSection,
 } from "@/components/home/AudienceSections";
 import { PLANES } from "@/lib/constants";
+import { SITE_URL } from "@/lib/site";
+import { SOCIALS } from "@/components/SocialLinks";
 
 export default function HomePage() {
   return (
     <>
+      {/* Datos estructurados de la marca: asocia las redes sociales (sameAs). */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            name: "GesLimpia",
+            url: SITE_URL,
+            logo: `${SITE_URL}/icons/icon-512.png`,
+            sameAs: [SOCIALS.instagram, SOCIALS.facebook],
+          }),
+        }}
+      />
       <SiteHeader />
 
       <main>

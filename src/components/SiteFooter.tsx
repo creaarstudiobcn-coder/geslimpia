@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Logo from "./Logo";
 import CookieSettingsButton from "./cookies/CookieSettingsButton";
+import SocialLinks from "./SocialLinks";
 
 export default function SiteFooter() {
   return (
@@ -13,6 +14,9 @@ export default function SiteFooter() {
               Plataforma de conexión entre hogares y limpiadoras profesionales
               independientes en la provincia de Barcelona.
             </p>
+            <div className="mt-6">
+              <SocialLinks />
+            </div>
           </div>
 
           <div>
