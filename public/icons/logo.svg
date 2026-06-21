@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="72" viewBox="0 0 300 72" fill="none">
+  <defs>
+    <linearGradient id="d" x1="14" y1="10" x2="58" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#27C2D6"></stop><stop offset="0.55" stop-color="#16B6BE"></stop><stop offset="1" stop-color="#10B981"></stop>
+    </linearGradient>
+  </defs>
+  <path fill="url(#d)" transform="translate(8 6) scale(0.117)" d="M256 56C150 196 122 250 122 332a134 134 0 1 0 268 0C390 250 362 196 256 56Z"></path>
+  <text x="78" y="48" font-family="&#39;Plus Jakarta Sans&#39;,system-ui,Arial,sans-serif" font-size="38" font-weight="800" letter-spacing="-1.2" fill="#15323A">Ges<tspan fill="#16B6BE">Limpia</tspan></text>
+</svg>
