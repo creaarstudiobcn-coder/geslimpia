@@ -44,7 +44,7 @@ export default function HomePage() {
             fill
             priority
             sizes="100vw"
-            className="-z-20 object-cover object-[78%_center] transition-transform duration-700 ease-out [@media(hover:hover)]:group-hover:scale-105 motion-reduce:!transform-none motion-reduce:!transition-none"
+            className="-z-20 object-cover object-[65%_18%] transition-transform duration-700 ease-out [@media(hover:hover)]:group-hover:scale-105 motion-reduce:!transform-none motion-reduce:!transition-none"
           />
           {/* Overlay para contraste AA del texto: más oscuro a la izquierda (donde va el texto). */}
           <div className="absolute inset-0 -z-10 bg-gradient-to-r from-petroleo/90 via-petroleo/60 to-petroleo/20 sm:to-transparent" />
