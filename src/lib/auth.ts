@@ -91,8 +91,14 @@ export const authOptions: NextAuthOptions = {
           token.ciudad = dbUser.ciudad ?? null;
         }
       }
-      // Tras elegir rol, el cliente llama a session.update() y refrescamos el token.
-      if (trigger === "update" && token.id) {
+      // Refrescamos el rol desde la BD en dos casos:
+      //  1) trigger === "update": el cliente llamó a session.update() tras elegir rol.
+      //  2) el token está autenticado pero aún sin rol: RED DE SEGURIDAD. Si update()
+      //     fallara (red), el rol ya guardado en BD se recupera en la siguiente petición
+      //     y el middleware deja pasar — así nunca se queda rebotando a /onboarding/rol.
+      // Coste: 1 query extra SOLO mientras role es null (ventana transitoria del usuario
+      // nuevo); en cuanto tiene rol, token.role es truthy y no se vuelve a consultar.
+      if (token.id && (trigger === "update" || !token.role)) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.id as string },
         });
