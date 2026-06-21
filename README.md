@@ -87,6 +87,8 @@ Ver `.env.example`. Resumen:
 | `NEXTAUTH_URL` | URL base de la app |
 | `GOOGLE_CLIENT_ID` | (Opcional) Client ID de OAuth de Google. Si falta, se oculta el login con Google |
 | `GOOGLE_CLIENT_SECRET` | (Opcional) Client Secret de OAuth de Google |
+| `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` | (Opcional) Site key de reCAPTCHA v3. Si falta, la verificación se omite |
+| `RECAPTCHA_SECRET_KEY` | (Opcional) Secret key de reCAPTCHA v3 (verificación en servidor) |
 | `STRIPE_SECRET_KEY` | Clave secreta de Stripe (modo test) |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Clave pública de Stripe |
 | `STRIPE_WEBHOOK_SECRET` | Secreto del webhook de Stripe |
@@ -149,6 +151,36 @@ simplemente no aparece y la app funciona con email/contraseña.
 > Cuando pases la pantalla de consentimiento a *Production* en Google, cualquier
 > cuenta de Google podrá iniciar sesión; en *Testing* solo las cuentas que añadas
 > como *test users*.
+
+---
+
+## reCAPTCHA v3 (anti-spam)
+
+Los formularios públicos de **registro** y **login email/contraseña** están protegidos
+con [Google reCAPTCHA v3](https://www.google.com/recaptcha/about/) (invisible, sin casilla).
+Es **opcional**: si no configuras las claves, la verificación se omite y los formularios
+funcionan igual (útil en local). El flujo de Google OAuth no lo necesita (ya lo protege Google).
+
+### Cómo funciona
+
+- El frontend carga el script de reCAPTCHA **solo** en `/login` y `/register` (hook
+  `src/lib/useRecaptcha.ts`), genera un token invisible al enviar y lo manda al backend.
+- El servidor lo verifica contra `https://www.google.com/recaptcha/api/siteverify`
+  (`src/lib/recaptcha.ts`): exige `success`, que la `action` coincida y `score >= 0.5`.
+- **Badge**: se deja **visible** el badge de Google (esquina inferior), que cumple el
+  requisito legal de v3 sin texto adicional.
+- **Criterio ante fallos**: sin claves → se omite; falta token → se rechaza; Google no
+  responde / timeout (5 s) → *fail-open* (no bloquea a usuarios legítimos por un fallo
+  transitorio); `success:false` o `score` bajo → *fail-closed* (se rechaza).
+
+### Crear las claves
+
+1. Entra en [google.com/recaptcha/admin](https://www.google.com/recaptcha/admin/create).
+2. Tipo: **reCAPTCHA v3**.
+3. **Dominios**: añade `geslimpia.es` y `localhost` (para desarrollo).
+4. Copia las dos claves a tu `.env` (y a Vercel en producción):
+   - **Site key** → `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` (pública, frontend)
+   - **Secret key** → `RECAPTCHA_SECRET_KEY` (privada, servidor)
 
 ---
 
@@ -247,6 +279,8 @@ En *Project → Settings → Environment Variables*, añade (entorno **Productio
 | `STRIPE_PRICE_COMPLETO` | `price_...` del plan Completo (paso 4) |
 | `GOOGLE_CLIENT_ID` | (Opcional) Client ID de OAuth de Google — ver "Login con Google" |
 | `GOOGLE_CLIENT_SECRET` | (Opcional) Client Secret de OAuth de Google |
+| `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` | (Opcional) Site key de reCAPTCHA v3 — ver "reCAPTCHA v3" |
+| `RECAPTCHA_SECRET_KEY` | (Opcional) Secret key de reCAPTCHA v3 |
 
 > Si dejas las claves de Stripe sin rellenar, la app arranca igual pero el checkout
 > funciona en **modo demo** (sin cobro). Para cobrar de verdad, completa los pasos 4 y 5.

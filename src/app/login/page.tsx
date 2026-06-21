@@ -6,10 +6,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import GoogleButton from "@/components/GoogleButton";
+import { useRecaptcha } from "@/lib/useRecaptcha";
 
 function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
+  const { executeRecaptcha } = useRecaptcha();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -19,14 +21,22 @@ function LoginForm() {
     e.preventDefault();
     setError("");
     setLoading(true);
+    const recaptchaToken = await executeRecaptcha("login");
     const res = await signIn("credentials", {
       email,
       password,
+      recaptchaToken: recaptchaToken ?? "",
       redirect: false,
     });
     setLoading(false);
     if (res?.error) {
-      setError("Email o contraseña incorrectos.");
+      // El error de reCAPTCHA llega como mensaje propio desde authorize();
+      // cualquier otro error se trata como credenciales inválidas.
+      setError(
+        res.error.includes("seguridad")
+          ? res.error
+          : "Email o contraseña incorrectos."
+      );
       return;
     }
     router.push(params.get("callbackUrl") || "/dashboard");

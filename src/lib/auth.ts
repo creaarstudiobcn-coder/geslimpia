@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
+import { verifyRecaptcha } from "./recaptcha";
 
 // Estrategia: JWT (sin Prisma adapter). El CredentialsProvider de NextAuth solo
 // funciona con JWT, así que para no romper el login email/contraseña NO usamos el
@@ -26,6 +27,19 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
+
+        // Anti-spam: el login pasa por aquí (no por una API propia). Si reCAPTCHA está
+        // activo y no valida, lanzamos un error claro que la página de login muestra.
+        const recaptcha = await verifyRecaptcha(
+          (credentials as Record<string, string>).recaptchaToken,
+          "login"
+        );
+        if (!recaptcha.ok) {
+          throw new Error(
+            "Verificación de seguridad fallida. Recarga la página e inténtalo de nuevo."
+          );
+        }
+
         const user = await prisma.user.findUnique({
           where: { email: credentials.email.toLowerCase().trim() },
         });

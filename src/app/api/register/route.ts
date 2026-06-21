@@ -2,10 +2,24 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { POBLACIONES } from "@/lib/constants";
+import { verifyRecaptcha } from "@/lib/recaptcha";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+
+    // Anti-spam: verificamos reCAPTCHA antes de cualquier trabajo en BD.
+    const recaptcha = await verifyRecaptcha(body.recaptchaToken, "register");
+    if (!recaptcha.ok) {
+      return NextResponse.json(
+        {
+          error:
+            "No hemos podido verificar que eres una persona. Recarga la página e inténtalo de nuevo.",
+        },
+        { status: 400 }
+      );
+    }
+
     const name = String(body.name ?? "").trim();
     const email = String(body.email ?? "")
       .toLowerCase()

@@ -7,10 +7,12 @@ import Link from "next/link";
 import Logo from "@/components/Logo";
 import GoogleButton from "@/components/GoogleButton";
 import { POBLACIONES } from "@/lib/constants";
+import { useRecaptcha } from "@/lib/useRecaptcha";
 
 function RegisterForm() {
   const router = useRouter();
   const params = useSearchParams();
+  const { executeRecaptcha } = useRecaptcha();
   const initialRole =
     params.get("role") === "LIMPIADORA" ? "LIMPIADORA" : "HOGAR";
   const planParam = params.get("plan");
@@ -28,10 +30,11 @@ function RegisterForm() {
     setError("");
     setLoading(true);
     try {
+      const recaptchaToken = await executeRecaptcha("register");
       const res = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, role, ciudad }),
+        body: JSON.stringify({ name, email, password, role, ciudad, recaptchaToken }),
       });
       const data = await res.json();
       if (!res.ok) {
