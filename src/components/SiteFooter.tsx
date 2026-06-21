@@ -5,13 +5,44 @@ export default function SiteFooter() {
   return (
     <footer className="border-t border-slate-100 bg-petroleo text-white">
       <div className="container-page py-12">
-        <div className="grid gap-8 md:grid-cols-3">
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
           <div>
             <Logo light />
             <p className="mt-4 max-w-xs text-sm text-white/70">
               Plataforma de conexión entre hogares y limpiadoras profesionales
-              independientes en Mataró y el Maresme.
+              independientes en la provincia de Barcelona.
             </p>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-semibold text-white">Zonas</h3>
+            <ul className="mt-4 space-y-2 text-sm text-white/70">
+              <li>
+                <Link href="/limpiadoras/barcelona" className="hover:text-menta">
+                  Limpiadora en Barcelona
+                </Link>
+              </li>
+              <li>
+                <Link href="/limpiadoras/badalona" className="hover:text-menta">
+                  Limpiadora en Badalona
+                </Link>
+              </li>
+              <li>
+                <Link href="/limpiadoras/terrassa" className="hover:text-menta">
+                  Limpiadora en Terrassa
+                </Link>
+              </li>
+              <li>
+                <Link href="/limpiadoras/mataro" className="hover:text-menta">
+                  Limpiadora en Mataró
+                </Link>
+              </li>
+              <li>
+                <Link href="/zonas" className="font-medium text-menta hover:underline">
+                  Ver todas las zonas →
+                </Link>
+              </li>
+            </ul>
           </div>
 
           <div>
