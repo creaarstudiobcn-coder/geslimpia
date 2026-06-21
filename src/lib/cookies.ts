@@ -46,28 +46,57 @@ export function writeConsent(analytics: boolean): Consent {
 // se activan aquí, tras el consentimiento previo. Hoy no hay analítica configurada:
 // si en el futuro se define NEXT_PUBLIC_GA_ID, se cargará Google Analytics SOLO si
 // el usuario ha aceptado la categoría analítica.
-const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
+export const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 
 declare global {
   interface Window {
     dataLayer?: unknown[];
+    gtag?: (...args: unknown[]) => void;
     __glAnalyticsLoaded?: boolean;
+    [key: `ga-disable-${string}`]: boolean | undefined;
   }
 }
 
+// Borra las cookies _ga / _ga_* (todas las variantes de dominio/path).
+function deleteGaCookies() {
+  if (typeof document === "undefined") return;
+  const host = window.location.hostname;
+  const domains = ["", host, `.${host}`, `.${host.split(".").slice(-2).join(".")}`];
+  for (const c of document.cookie.split("; ")) {
+    const name = c.split("=")[0];
+    if (name === "_ga" || name.startsWith("_ga_") || name === "_gid" || name === "_gat") {
+      for (const d of domains) {
+        document.cookie = `${name}=; path=/; max-age=0${d ? `; domain=${d}` : ""}`;
+      }
+    }
+  }
+}
+
+// Carga o desactiva Google Analytics según el consentimiento. Las cookies analíticas
+// solo se activan aquí, tras el consentimiento PREVIO del usuario. Sin NEXT_PUBLIC_GA_ID
+// no se carga nada (GA queda desactivado sin romper la web).
 export function applyConsent(consent: Consent) {
-  if (typeof window === "undefined") return;
-  if (consent.analytics && GA_ID && !window.__glAnalyticsLoaded) {
+  if (typeof window === "undefined" || !GA_ID) return;
+
+  if (consent.analytics) {
+    // Reactiva el kill-switch de Google por si se había revocado antes en esta sesión.
+    window[`ga-disable-${GA_ID}`] = false;
+    if (window.__glAnalyticsLoaded) return;
     window.__glAnalyticsLoaded = true;
     const s = document.createElement("script");
     s.async = true;
     s.src = `https://www.googletagmanager.com/gtag/js?id=${GA_ID}`;
     document.head.appendChild(s);
     window.dataLayer = window.dataLayer || [];
-    const gtag = (...args: unknown[]) => {
-      window.dataLayer!.push(args);
+    window.gtag = function gtag() {
+      // eslint-disable-next-line prefer-rest-params
+      window.dataLayer!.push(arguments);
     };
-    gtag("js", new Date());
-    gtag("config", GA_ID, { anonymize_ip: true });
+    window.gtag("js", new Date());
+    window.gtag("config", GA_ID, { anonymize_ip: true });
+  } else {
+    // Revocación: kill-switch oficial de Google + borrado de cookies _ga existentes.
+    window[`ga-disable-${GA_ID}`] = true;
+    deleteGaCookies();
   }
 }
