@@ -44,6 +44,10 @@ export const authOptions: NextAuthOptions = {
           where: { email: credentials.email.toLowerCase().trim() },
         });
         if (!user) return null;
+        // Cuenta desactivada por el admin: no puede iniciar sesión.
+        if (!user.active) {
+          throw new Error("Esta cuenta está desactivada. Contacta con soporte.");
+        }
         // Cuentas creadas solo con Google no tienen contraseña: rechazar login por credenciales.
         if (!user.passwordHash) return null;
         const ok = await bcrypt.compare(credentials.password, user.passwordHash);
@@ -52,7 +56,7 @@ export const authOptions: NextAuthOptions = {
           id: user.id,
           name: user.name,
           email: user.email,
-          role: user.role as "HOGAR" | "LIMPIADORA" | null,
+          role: user.role as "HOGAR" | "LIMPIADORA" | "ADMIN" | null,
           ciudad: user.ciudad,
         };
       },
@@ -85,6 +89,8 @@ export const authOptions: NextAuthOptions = {
           },
         });
       }
+      // Cuenta existente pero desactivada por el admin: no permitir el acceso con Google.
+      if (existing && !existing.active) return false;
       // Si ya existía (p.ej. cuenta con email/contraseña), se reutiliza: auto-vinculación
       // por email verificado por Google. La cuenta queda con ambos métodos de acceso.
       return true;
@@ -101,7 +107,7 @@ export const authOptions: NextAuthOptions = {
             : await prisma.user.findUnique({ where: { id: (user as any).id } });
         if (dbUser) {
           token.id = dbUser.id;
-          token.role = (dbUser.role as "HOGAR" | "LIMPIADORA" | null) ?? null;
+          token.role = (dbUser.role as "HOGAR" | "LIMPIADORA" | "ADMIN" | null) ?? null;
           token.ciudad = dbUser.ciudad ?? null;
         }
       }
@@ -117,7 +123,7 @@ export const authOptions: NextAuthOptions = {
           where: { id: token.id as string },
         });
         if (dbUser) {
-          token.role = (dbUser.role as "HOGAR" | "LIMPIADORA" | null) ?? null;
+          token.role = (dbUser.role as "HOGAR" | "LIMPIADORA" | "ADMIN" | null) ?? null;
           token.ciudad = dbUser.ciudad ?? null;
         }
       }
@@ -127,7 +133,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.id = token.id as string;
         session.user.role =
-          (token.role as "HOGAR" | "LIMPIADORA" | null) ?? null;
+          (token.role as "HOGAR" | "LIMPIADORA" | "ADMIN" | null) ?? null;
         session.user.ciudad = (token.ciudad as string | null) ?? null;
       }
       return session;

@@ -24,8 +24,9 @@ model User {
   name         String
   email        String   @unique
   passwordHash String? // null para cuentas que entran solo con Google (OAuth)
-  role         String? // "HOGAR" | "LIMPIADORA" | null (null = aún no ha elegido rol, p.ej. tras 1ª entrada con Google)
+  role         String? // "HOGAR" | "LIMPIADORA" | "ADMIN" | null (null = aún no ha elegido rol)
   ciudad       String? // opcional: las cuentas de Google la eligen en /onboarding/rol
+  active       Boolean  @default(true) // false = cuenta desactivada por el admin (no puede entrar ni aparece en listados)
   createdAt    DateTime @default(now())
 
   cleanerProfile CleanerProfile?
@@ -41,6 +42,9 @@ model User {
 
   favorites Favorite[] @relation("FavoriteHome")
   favoredBy Favorite[] @relation("FavoriteCleaner")
+
+  supportMessages SupportMessage[] @relation("SupportThread")
+  adminLogs       AdminLog[]       @relation("AdminActor")
 }
 
 model CleanerProfile {
@@ -54,6 +58,7 @@ model CleanerProfile {
   availability  String   @default("") // texto libre, p.ej. "L-V mañanas"
   photoUrl      String   @default("")
   disponibleHoy Boolean  @default(true)
+  verified      Boolean  @default(false) // sello "verificada" otorgado por el admin
   ratingAvg     Float    @default(0)
   ratingCount   Int      @default(0)
   onboarded     Boolean  @default(false)
@@ -119,4 +124,33 @@ model Favorite {
   createdAt     DateTime @default(now())
 
   @@unique([homeUserId, cleanerUserId])
+}
+
+// Chat de soporte entre el ADMIN y un usuario (hogar o limpiadora). Aislado del
+// chat de reservas (model Message): el "hilo" es el conjunto de mensajes de un userId.
+model SupportMessage {
+  id        String   @id @default(cuid())
+  userId    String // el usuario (no-admin) con quien conversa el admin
+  user      User     @relation("SupportThread", fields: [userId], references: [id], onDelete: Cascade)
+  fromAdmin Boolean // true = lo envió el admin; false = lo envió el usuario
+  body      String
+  readByUser  Boolean @default(false) // el usuario ya lo leyó (para mensajes del admin)
+  readByAdmin Boolean @default(false) // el admin ya lo leyó (para mensajes del usuario)
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+// Registro de auditoría de acciones del admin (sobre todo las destructivas).
+model AdminLog {
+  id         String   @id @default(cuid())
+  adminId    String
+  admin      User     @relation("AdminActor", fields: [adminId], references: [id], onDelete: Cascade)
+  action     String // "VERIFY" | "UNVERIFY" | "DEACTIVATE" | "REACTIVATE" | "DELETE_USER"
+  targetType String // "USER" | "CLEANER"
+  targetId   String
+  detail     String   @default("")
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
 }

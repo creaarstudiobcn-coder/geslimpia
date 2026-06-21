@@ -5,13 +5,13 @@ declare module "next-auth" {
     user: {
       id: string;
       // null mientras el usuario (p.ej. recién entrado con Google) no ha elegido rol.
-      role: "HOGAR" | "LIMPIADORA" | null;
+      role: "HOGAR" | "LIMPIADORA" | "ADMIN" | null;
       ciudad: string | null;
     } & DefaultSession["user"];
   }
 
   interface User {
-    role: "HOGAR" | "LIMPIADORA" | null;
+    role: "HOGAR" | "LIMPIADORA" | "ADMIN" | null;
     ciudad: string | null;
   }
 }
@@ -19,7 +19,7 @@ declare module "next-auth" {
 declare module "next-auth/jwt" {
   interface JWT {
     id: string;
-    role: "HOGAR" | "LIMPIADORA" | null;
+    role: "HOGAR" | "LIMPIADORA" | "ADMIN" | null;
     ciudad: string | null;
   }
 }

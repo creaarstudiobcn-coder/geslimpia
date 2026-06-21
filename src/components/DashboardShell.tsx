@@ -14,6 +14,7 @@ const NAV_HOGAR: NavItem[] = [
   { href: "/dashboard/mensajes", label: "Mensajes", icon: "💬" },
   { href: "/dashboard/favoritas", label: "Favoritas", icon: "⭐" },
   { href: "/dashboard/plan", label: "Mi plan", icon: "💳" },
+  { href: "/dashboard/soporte", label: "Mensajes del equipo", icon: "🛟" },
 ];
 
 const NAV_LIMPIADORA: NavItem[] = [
@@ -22,6 +23,7 @@ const NAV_LIMPIADORA: NavItem[] = [
   { href: "/dashboard/mensajes", label: "Mensajes", icon: "💬" },
   { href: "/dashboard/valoraciones", label: "Valoraciones", icon: "⭐" },
   { href: "/dashboard/perfil", label: "Mi perfil y tarifa", icon: "🧽" },
+  { href: "/dashboard/soporte", label: "Mensajes del equipo", icon: "🛟" },
 ];
 
 export default function DashboardShell({

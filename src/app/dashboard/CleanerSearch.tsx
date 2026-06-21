@@ -22,6 +22,7 @@ type Cleaner = {
   availability: string;
   photoUrl: string;
   disponibleHoy: boolean;
+  verified: boolean;
   ratingAvg: number;
   ratingCount: number;
   isFavorite: boolean;
@@ -136,8 +137,16 @@ export default function CleanerSearch({
                 <Avatar name={c.name} src={c.photoUrl} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="truncate font-semibold text-petroleo">
-                      {c.name}
+                    <p className="flex min-w-0 items-center gap-1 truncate font-semibold text-petroleo">
+                      <span className="truncate">{c.name}</span>
+                      {c.verified && (
+                        <span
+                          title="Limpiadora verificada por GesLimpia"
+                          className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-agua/10 px-1.5 py-0.5 text-[10px] font-semibold text-agua"
+                        >
+                          ✓ Verificada
+                        </span>
+                      )}
                     </p>
                     <button
                       onClick={() => toggleFav(c.userId)}

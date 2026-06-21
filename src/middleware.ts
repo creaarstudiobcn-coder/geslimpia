@@ -8,6 +8,20 @@ export default withAuth(
     const { token } = req.nextauth;
     const { pathname } = req.nextUrl;
     const choosingRole = pathname === "/onboarding/rol";
+    const isAdminArea = pathname.startsWith("/admin");
+
+    // Gate del panel de administrador: solo rol ADMIN. Cualquier otro (hogar,
+    // limpiadora, sin rol) se va a la home. La verificación real se repite en el
+    // servidor (requireAdmin / getAdminId); esto es la primera barrera (edge).
+    if (isAdminArea && token?.role !== "ADMIN") {
+      return NextResponse.redirect(new URL("/", req.url));
+    }
+
+    // El admin no participa en el flujo de elección de rol ni en el dashboard de
+    // usuario: lo dejamos pasar directamente en su área.
+    if (isAdminArea) {
+      return NextResponse.next();
+    }
 
     // Autenticado pero sin rol asignado (p.ej. recién entrado con Google):
     // forzamos la elección de rol antes de dejarle usar nada más.
@@ -32,5 +46,10 @@ export default withAuth(
 );
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/onboarding/:path*", "/suscripcion/:path*"],
+  matcher: [
+    "/admin/:path*",
+    "/dashboard/:path*",
+    "/onboarding/:path*",
+    "/suscripcion/:path*",
+  ],
 };

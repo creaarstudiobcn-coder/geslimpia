@@ -75,10 +75,13 @@ export default async function DashboardHome({
   const cleaners = await prisma.cleanerProfile.findMany({
     where: {
       onboarded: true,
+      // No mostrar limpiadoras cuya cuenta ha sido desactivada por el admin.
+      user: { active: true },
       ...(soloDisponibles ? { disponibleHoy: true } : {}),
     },
     include: { user: { select: { name: true, ciudad: true } } },
-    orderBy: [{ ratingAvg: "desc" }, { ratingCount: "desc" }],
+    // Las verificadas primero, después por valoración.
+    orderBy: [{ verified: "desc" }, { ratingAvg: "desc" }, { ratingCount: "desc" }],
   });
 
   // Favoritas y contactos previos
@@ -108,6 +111,7 @@ export default async function DashboardHome({
       availability: c.availability,
       photoUrl: c.photoUrl,
       disponibleHoy: c.disponibleHoy,
+      verified: c.verified,
       ratingAvg: c.ratingAvg,
       ratingCount: c.ratingCount,
       isFavorite: favSet.has(c.userId),
