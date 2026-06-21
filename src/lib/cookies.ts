@@ -93,6 +93,9 @@ export function applyConsent(consent: Consent) {
       window.dataLayer!.push(arguments);
     };
     window.gtag("js", new Date());
+    // Anonimización de IP. En GA4 la IP NO se registra ni almacena (anonimización
+    // por defecto), por lo que `anonymize_ip` es redundante; lo dejamos explícito
+    // como declaración de intención y por compatibilidad.
     window.gtag("config", GA_ID, { anonymize_ip: true });
   } else {
     // Revocación: kill-switch oficial de Google + borrado de cookies _ga existentes.
