@@ -20,6 +20,7 @@ export default async function PerfilPage() {
         subtitle="Tú fijas tu tarifa y tu disponibilidad. Mantén tu perfil al día para recibir más solicitudes."
       />
       <PerfilEditor
+        name={user.name}
         initial={{
           bio: p?.bio ?? "",
           hourlyRate: p?.hourlyRate ?? 12,

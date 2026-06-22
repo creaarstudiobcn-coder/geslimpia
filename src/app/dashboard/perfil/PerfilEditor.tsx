@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { SERVICIOS, POBLACIONES } from "@/lib/constants";
+import PhotoUploader from "./PhotoUploader";
 
 type Initial = {
   bio: string;
@@ -14,7 +15,13 @@ type Initial = {
   disponibleHoy: boolean;
 };
 
-export default function PerfilEditor({ initial }: { initial: Initial }) {
+export default function PerfilEditor({
+  name,
+  initial,
+}: {
+  name: string;
+  initial: Initial;
+}) {
   const router = useRouter();
   const [bio, setBio] = useState(initial.bio);
   const [hourlyRate, setHourlyRate] = useState(String(initial.hourlyRate));
@@ -108,18 +115,7 @@ export default function PerfilEditor({ initial }: { initial: Initial }) {
           </div>
         </div>
 
-        <div>
-          <label className="label" htmlFor="photoUrl">
-            Foto (URL, opcional)
-          </label>
-          <input
-            id="photoUrl"
-            className="input"
-            value={photoUrl}
-            onChange={(e) => setPhotoUrl(e.target.value)}
-            placeholder="https://…"
-          />
-        </div>
+        <PhotoUploader name={name} value={photoUrl} onChange={setPhotoUrl} />
 
         <div>
           <label className="label" htmlFor="bio">

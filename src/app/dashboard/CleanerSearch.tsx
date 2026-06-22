@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Avatar, RatingStars } from "@/components/ui";
 import {
@@ -227,6 +227,26 @@ function ContactModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [limitReached, setLimitReached] = useState(false);
+  const [reviews, setReviews] = useState<
+    { id: string; author: string; rating: number; comment: string; createdAt: string }[]
+  >([]);
+  const [reviewsLoaded, setReviewsLoaded] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    fetch(`/api/reviews?cleanerUserId=${cleaner.userId}`)
+      .then((r) => (r.ok ? r.json() : { reviews: [] }))
+      .then((d) => {
+        if (active) {
+          setReviews(d.reviews ?? []);
+          setReviewsLoaded(true);
+        }
+      })
+      .catch(() => active && setReviewsLoaded(true));
+    return () => {
+      active = false;
+    };
+  }, [cleaner.userId]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -259,18 +279,71 @@ function ContactModal({
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4">
-      <div className="card w-full max-w-md p-6">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold text-petroleo">
-            Contactar con {cleaner.name}
-          </h3>
+      <div className="card max-h-[90vh] w-full max-w-md overflow-y-auto p-6">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <Avatar name={cleaner.name} src={cleaner.photoUrl} size={56} />
+            <div className="min-w-0">
+              <h3 className="flex items-center gap-1 truncate text-lg font-bold text-petroleo">
+                <span className="truncate">{cleaner.name}</span>
+                {cleaner.verified && (
+                  <span
+                    title="Limpiadora verificada por GesLimpia"
+                    className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-agua/10 px-1.5 py-0.5 text-[10px] font-semibold text-agua"
+                  >
+                    ✓ Verificada
+                  </span>
+                )}
+              </h3>
+              <p className="truncate text-sm text-slate-500">{cleaner.ciudad}</p>
+              <RatingStars value={cleaner.ratingAvg} count={cleaner.ratingCount} />
+            </div>
+          </div>
           <button onClick={onClose} className="text-slate-400" aria-label="Cerrar">
             ✕
           </button>
         </div>
 
+        {cleaner.bio && (
+          <p className="mt-3 text-sm text-slate-600">{cleaner.bio}</p>
+        )}
+
+        {/* Reseñas visibles de la limpiadora */}
+        <div className="mt-4 border-t border-slate-100 pt-4">
+          <h4 className="mb-2 text-sm font-semibold text-petroleo">
+            Reseñas {cleaner.ratingCount > 0 && `(${cleaner.ratingCount})`}
+          </h4>
+          {!reviewsLoaded ? (
+            <p className="text-sm text-slate-400">Cargando reseñas…</p>
+          ) : reviews.length === 0 ? (
+            <p className="text-sm text-slate-400">
+              Todavía no tiene reseñas. ¡Sé el primero en valorarla tras una limpieza!
+            </p>
+          ) : (
+            <ul className="space-y-3">
+              {reviews.map((r) => (
+                <li
+                  key={r.id}
+                  className="rounded-xl bg-espuma/60 p-3 text-sm"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-medium text-petroleo">{r.author}</span>
+                    <RatingStars value={r.rating} />
+                  </div>
+                  {r.comment && (
+                    <p className="mt-1 text-slate-600">“{r.comment}”</p>
+                  )}
+                  <p className="mt-1 text-xs text-slate-400">
+                    {new Date(r.createdAt).toLocaleDateString("es-ES")}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
         {!cleaner.alreadyContacted && (
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-4 text-xs text-slate-500">
             Plan {contactInfo.planName}: {contactInfo.used}/{contactInfo.limit}{" "}
             limpiadoras contactadas.
           </p>

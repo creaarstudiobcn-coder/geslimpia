@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { parseList, servicioLabel } from "@/lib/constants";
 import { AdminHeader, Badge } from "@/components/admin/AdminUi";
 import UserActions from "@/components/admin/UserActions";
+import ReviewActions from "@/components/admin/ReviewActions";
+import { Avatar } from "@/components/ui";
 
 export default async function AdminLimpiadoraDetalle({
   params,
@@ -31,6 +33,14 @@ export default async function AdminLimpiadoraDetalle({
         subtitle={user.email}
         back={{ href: "/admin/limpiadoras", label: "Limpiadoras" }}
       />
+
+      {/* Foto de perfil (la que ven los hogares) */}
+      <div className="mb-5 flex items-center gap-4">
+        <Avatar name={user.name} src={p?.photoUrl} size={72} />
+        <span className="text-xs text-slate-400">
+          {p?.photoUrl ? "Foto de perfil subida" : "Sin foto (avatar con inicial)"}
+        </span>
+      </div>
 
       <div className="mb-5 flex flex-wrap items-center gap-2">
         {p?.verified && <Badge tone="blue">✓ Verificada</Badge>}
@@ -95,12 +105,16 @@ export default async function AdminLimpiadoraDetalle({
             <ul className="space-y-3">
               {user.reviewsReceived.map((r) => (
                 <li key={r.id} className="border-b border-slate-100 pb-3 last:border-0">
-                  <p className="text-sm font-medium text-petroleo">
-                    {"★".repeat(r.rating)}
-                    <span className="text-slate-300">{"★".repeat(5 - r.rating)}</span>{" "}
+                  <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-petroleo">
+                    <span>
+                      {"★".repeat(r.rating)}
+                      <span className="text-slate-300">{"★".repeat(5 - r.rating)}</span>
+                    </span>
                     <span className="text-xs text-slate-400">— {r.homeUser.name}</span>
+                    {r.hidden && <Badge tone="amber">Oculta</Badge>}
                   </p>
                   {r.comment && <p className="text-sm text-slate-600">{r.comment}</p>}
+                  <ReviewActions reviewId={r.id} hidden={r.hidden} />
                 </li>
               ))}
             </ul>

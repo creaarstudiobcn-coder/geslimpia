@@ -2,6 +2,39 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { recomputeCleanerRating } from "@/lib/reviews";
+
+// Leer las reseñas (visibles) de una limpiadora — para que los hogares las vean.
+// Excluye las ocultadas por el admin.
+export async function GET(req: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "No autorizado." }, { status: 401 });
+  }
+
+  const { searchParams } = new URL(req.url);
+  const cleanerUserId = String(searchParams.get("cleanerUserId") ?? "");
+  if (!cleanerUserId) {
+    return NextResponse.json({ error: "Falta cleanerUserId." }, { status: 400 });
+  }
+
+  const reviews = await prisma.review.findMany({
+    where: { cleanerUserId, hidden: false },
+    orderBy: { createdAt: "desc" },
+    take: 20,
+    include: { homeUser: { select: { name: true } } },
+  });
+
+  return NextResponse.json({
+    reviews: reviews.map((r) => ({
+      id: r.id,
+      author: r.homeUser.name,
+      rating: r.rating,
+      comment: r.comment,
+      createdAt: r.createdAt.toISOString(),
+    })),
+  });
+}
 
 // Crear una valoración a una limpiadora (solo HOGAR, requiere reserva completada)
 export async function POST(req: Request) {
@@ -38,19 +71,8 @@ export async function POST(req: Request) {
     data: { cleanerUserId, homeUserId: session.user.id, rating, comment },
   });
 
-  // Recalcular media
-  const agg = await prisma.review.aggregate({
-    where: { cleanerUserId },
-    _avg: { rating: true },
-    _count: true,
-  });
-  await prisma.cleanerProfile.update({
-    where: { userId: cleanerUserId },
-    data: {
-      ratingAvg: agg._avg.rating ?? 0,
-      ratingCount: agg._count,
-    },
-  });
+  // Recalcular media (solo reseñas visibles)
+  await recomputeCleanerRating(cleanerUserId);
 
   return NextResponse.json({ ok: true });
 }

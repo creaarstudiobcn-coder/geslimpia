@@ -41,8 +41,11 @@ export async function logAdmin(params: {
     | "UNVERIFY"
     | "DEACTIVATE"
     | "REACTIVATE"
-    | "DELETE_USER";
-  targetType: "USER" | "CLEANER";
+    | "DELETE_USER"
+    | "HIDE_REVIEW"
+    | "SHOW_REVIEW"
+    | "DELETE_REVIEW";
+  targetType: "USER" | "CLEANER" | "REVIEW";
   targetId: string;
   detail?: string;
 }) {

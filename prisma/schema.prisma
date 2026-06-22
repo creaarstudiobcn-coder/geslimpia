@@ -112,7 +112,10 @@ model Review {
   homeUser      User     @relation("ReviewAuthor", fields: [homeUserId], references: [id], onDelete: Cascade)
   rating        Int
   comment       String   @default("")
+  hidden        Boolean  @default(false) // true = oculta por el admin (no se muestra a los hogares ni cuenta para la media)
   createdAt     DateTime @default(now())
+
+  @@index([cleanerUserId, hidden])
 }
 
 model Favorite {
