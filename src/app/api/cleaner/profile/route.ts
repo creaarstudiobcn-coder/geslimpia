@@ -12,10 +12,10 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const bio = String(body.bio ?? "").trim();
-    const hourlyRate = Math.max(0, Number(body.hourlyRate) || 0);
-    const availability = String(body.availability ?? "").trim();
-    const photoUrl = String(body.photoUrl ?? "").trim();
+    const bio = String(body.bio ?? "").trim().slice(0, 500);
+    const hourlyRate = Math.min(999, Math.max(0, Number(body.hourlyRate) || 0));
+    const availability = String(body.availability ?? "").trim().slice(0, 200);
+    // photoUrl lo gestiona exclusivamente /api/cleaner/photo — no se acepta aquí.
     const disponibleHoy =
       body.disponibleHoy === undefined ? true : Boolean(body.disponibleHoy);
 
@@ -33,7 +33,6 @@ export async function POST(req: Request) {
         bio,
         hourlyRate,
         availability,
-        photoUrl,
         services: stringifyList(services),
         zones: stringifyList(zones),
         disponibleHoy,
@@ -44,7 +43,6 @@ export async function POST(req: Request) {
         bio,
         hourlyRate,
         availability,
-        photoUrl,
         services: stringifyList(services),
         zones: stringifyList(zones),
         disponibleHoy,

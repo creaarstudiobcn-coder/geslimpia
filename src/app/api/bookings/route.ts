@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PLANES, type PlanId } from "@/lib/constants";
+import { sendNewContactEmail } from "@/lib/email";
 
 // Crear una reserva / contacto (solo HOGAR con suscripción activa)
 export async function POST(req: Request) {
@@ -23,8 +24,8 @@ export async function POST(req: Request) {
 
   const body = await req.json().catch(() => ({}));
   const cleanerUserId = String(body.cleanerUserId ?? "");
-  const hours = Math.max(1, Number(body.hours) || 2);
-  const notes = String(body.notes ?? "").trim();
+  const hours = Math.min(24, Math.max(1, Number(body.hours) || 2));
+  const notes = String(body.notes ?? "").trim().slice(0, 500);
   const dateStr = String(body.date ?? "");
   const date = dateStr ? new Date(dateStr) : new Date();
   if (isNaN(date.getTime())) {
@@ -85,6 +86,16 @@ export async function POST(req: Request) {
       data: { contactsUsed: contactedIds.size + 1 },
     });
   }
+
+  // Aviso por email a la limpiadora (no bloquea la reserva si falla)
+  await sendNewContactEmail({
+    to: cleaner.email,
+    cleanerName: cleaner.name,
+    homeName: session.user.name ?? "Una familia",
+    date,
+    hours,
+    notes,
+  });
 
   return NextResponse.json({ ok: true, bookingId: booking.id });
 }

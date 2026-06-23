@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { POBLACIONES } from "@/lib/constants";
 import { verifyRecaptcha } from "@/lib/recaptcha";
+import { sendWelcomeEmail } from "@/lib/email";
 
 export async function POST(req: Request) {
   try {
@@ -67,6 +68,9 @@ export async function POST(req: Request) {
         data: { userId: user.id },
       });
     }
+
+    // Email de bienvenida (no bloquea el registro si falla / no está configurado)
+    await sendWelcomeEmail({ to: email, name, role });
 
     return NextResponse.json({ ok: true, role }, { status: 201 });
   } catch (err) {

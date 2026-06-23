@@ -56,7 +56,6 @@ export default function PerfilEditor({
         bio,
         hourlyRate: Number(hourlyRate),
         availability,
-        photoUrl,
         services,
         zones,
         disponibleHoy,

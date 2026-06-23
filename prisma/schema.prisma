@@ -149,7 +149,7 @@ model AdminLog {
   id         String   @id @default(cuid())
   adminId    String
   admin      User     @relation("AdminActor", fields: [adminId], references: [id], onDelete: Cascade)
-  action     String // "VERIFY" | "UNVERIFY" | "DEACTIVATE" | "REACTIVATE" | "DELETE_USER"
+  action     String // "VERIFY" | "UNVERIFY" | "DEACTIVATE" | "REACTIVATE" | "DELETE_USER" | "HIDE_REVIEW" | "SHOW_REVIEW" | "DELETE_REVIEW"
   targetType String // "USER" | "CLEANER"
   targetId   String
   detail     String   @default("")

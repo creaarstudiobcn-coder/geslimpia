@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { recomputeCleanerRating } from "@/lib/reviews";
+import { sendNewReviewEmail } from "@/lib/email";
 
 // Leer las reseñas (visibles) de una limpiadora — para que los hogares las vean.
 // Excluye las ocultadas por el admin.
@@ -73,6 +74,21 @@ export async function POST(req: Request) {
 
   // Recalcular media (solo reseñas visibles)
   await recomputeCleanerRating(cleanerUserId);
+
+  // Aviso por email a la limpiadora (no bloquea la creación de la reseña)
+  const cleaner = await prisma.user.findUnique({
+    where: { id: cleanerUserId },
+    select: { email: true, name: true },
+  });
+  if (cleaner?.email) {
+    await sendNewReviewEmail({
+      to: cleaner.email,
+      cleanerName: cleaner.name ?? "",
+      rating,
+      comment,
+      homeName: session.user.name ?? undefined,
+    });
+  }
 
   return NextResponse.json({ ok: true });
 }

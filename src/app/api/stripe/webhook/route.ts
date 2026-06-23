@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
+import { PLANES, type PlanId } from "@/lib/constants";
+import { sendSubscriptionReceiptEmail } from "@/lib/email";
 
 // Webhook de Stripe. Configura el endpoint en el dashboard de Stripe apuntando a
 // https://TU-DOMINIO/api/stripe/webhook y guarda el secreto en STRIPE_WEBHOOK_SECRET.
@@ -89,6 +91,22 @@ export async function POST(req: Request) {
             currentPeriodEnd: periodEnd,
           },
         });
+
+        // Recibo / confirmación por email (no bloquea el procesado del webhook)
+        const buyer = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { email: true, name: true },
+        });
+        if (buyer?.email) {
+          const planInfo = PLANES[plan as PlanId] ?? PLANES.BASICO;
+          await sendSubscriptionReceiptEmail({
+            to: buyer.email,
+            name: buyer.name ?? "",
+            planName: planInfo.nombre,
+            priceLabel: planInfo.precioLabel,
+            contactos: planInfo.contactos,
+          });
+        }
         break;
       }
 

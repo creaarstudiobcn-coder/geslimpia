@@ -46,6 +46,12 @@ export async function POST(req: Request) {
   if (!bookingId || !text) {
     return NextResponse.json({ error: "Mensaje vacío." }, { status: 400 });
   }
+  if (text.length > 2000) {
+    return NextResponse.json(
+      { error: "El mensaje no puede superar los 2000 caracteres." },
+      { status: 400 }
+    );
+  }
 
   const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
   if (

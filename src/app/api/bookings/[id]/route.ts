@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { sendBookingAcceptedEmail } from "@/lib/email";
 
 const VALID = ["ACEPTADA", "RECHAZADA", "COMPLETADA"];
 
@@ -43,6 +44,27 @@ export async function PATCH(
     where: { id: params.id },
     data: { status },
   });
+
+  // Cuando la limpiadora acepta, avisamos al hogar por email (no bloquea la acción)
+  if (status === "ACEPTADA" && isCleaner) {
+    const [home, cleaner] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: booking.homeUserId },
+        select: { email: true, name: true },
+      }),
+      prisma.user.findUnique({
+        where: { id: booking.cleanerUserId },
+        select: { name: true },
+      }),
+    ]);
+    if (home?.email) {
+      await sendBookingAcceptedEmail({
+        to: home.email,
+        homeName: home.name ?? "",
+        cleanerName: cleaner?.name ?? "La limpiadora",
+      });
+    }
+  }
 
   return NextResponse.json({ ok: true });
 }
