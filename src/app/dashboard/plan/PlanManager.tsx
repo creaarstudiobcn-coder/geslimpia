@@ -17,19 +17,31 @@ export default function PlanManager({
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState("");
+  const [error, setError] = useState("");
   const current = PLANES[plan];
   const other = plan === "BASICO" ? PLANES.COMPLETO : PLANES.BASICO;
   const pct = Math.min(100, Math.round((contactsUsed / limit) * 100));
 
   async function changePlan(target: PlanId) {
     setLoading("change");
-    await fetch("/api/subscription", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "changePlan", plan: target }),
-    });
-    setLoading("");
-    router.refresh();
+    setError("");
+    try {
+      const res = await fetch("/api/subscription", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "changePlan", plan: target }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? "No se pudo cambiar el plan.");
+        return;
+      }
+      router.refresh();
+    } catch {
+      setError("No se pudo conectar. Revisa tu conexión e inténtalo de nuevo.");
+    } finally {
+      setLoading("");
+    }
   }
 
   async function cancel() {
@@ -93,8 +105,14 @@ export default function PlanManager({
         </h3>
         <p className="mt-1 text-sm text-slate-600">
           Cambia al plan {other.nombre} ({other.precioLabel}/mes) — contacta hasta{" "}
-          {other.contactos} limpiadoras.
+          {other.contactos} limpiadoras. Se ajustará el importe en tu próxima
+          factura por los días que queden del periodo actual.
         </p>
+        {error && (
+          <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+            {error}
+          </p>
+        )}
         <button
           onClick={() => changePlan(other.id)}
           disabled={loading === "change"}

@@ -11,3 +11,16 @@ export const SITE_URL = (
 export function absoluteUrl(path: string): string {
   return `${SITE_URL}${path.startsWith("/") ? path : `/${path}`}`;
 }
+
+// Base para las URLs a las que Stripe devuelve al cliente tras el checkout.
+// En producción es siempre el dominio canónico: si dependiera de una env var que
+// puede faltar o apuntar al dominio sin www, el cliente que acaba de pagar
+// aterrizaría en localhost o cruzaría un redirect que le tira la sesión.
+// En local sí dejamos que apunte al servidor de desarrollo.
+export function appBaseUrl(): string {
+  if (process.env.NODE_ENV === "production") return SITE_URL;
+  return (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(
+    /\/$/,
+    ""
+  );
+}

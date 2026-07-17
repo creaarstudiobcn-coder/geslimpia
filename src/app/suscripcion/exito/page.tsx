@@ -22,11 +22,28 @@ export default async function ExitoPage({
       const s = await stripe.checkout.sessions.retrieve(
         searchParams.session_id
       );
-      if (s.payment_status === "paid" || s.status === "complete") {
+      // El session_id viaja en la URL y cualquiera puede reutilizarlo, así que
+      // solo confirmamos si el pago es de este mismo usuario.
+      const ownerId = s.metadata?.userId ?? s.client_reference_id ?? null;
+      const paid = s.payment_status === "paid" || s.status === "complete";
+
+      if (paid && ownerId === user.id) {
         const plan =
           (s.metadata?.plan as "BASICO" | "COMPLETO") || "BASICO";
-        const periodEnd = new Date();
-        periodEnd.setMonth(periodEnd.getMonth() + 1);
+
+        // Periodo real de Stripe; el mes estimado solo como último recurso.
+        let periodEnd: Date | null = null;
+        if (s.subscription) {
+          const stripeSub = await stripe.subscriptions.retrieve(
+            s.subscription as string
+          );
+          periodEnd = new Date(stripeSub.current_period_end * 1000);
+        }
+        if (!periodEnd) {
+          periodEnd = new Date();
+          periodEnd.setMonth(periodEnd.getMonth() + 1);
+        }
+
         await prisma.subscription.upsert({
           where: { userId: user.id },
           update: {
@@ -40,6 +57,8 @@ export default async function ExitoPage({
             userId: user.id,
             plan,
             status: "ACTIVA",
+            stripeCustomerId: (s.customer as string) ?? undefined,
+            stripeSubscriptionId: (s.subscription as string) ?? undefined,
             currentPeriodEnd: periodEnd,
           },
         });

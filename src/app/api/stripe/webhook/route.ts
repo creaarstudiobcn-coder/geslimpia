@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
-import { stripe } from "@/lib/stripe";
+import { stripe, planForPriceId } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import { PLANES, type PlanId } from "@/lib/constants";
 import { sendSubscriptionReceiptEmail } from "@/lib/email";
@@ -140,14 +140,17 @@ export async function POST(req: Request) {
         break;
       }
 
-      // Cambios de estado (activa, past_due, cancelación programada, etc.).
+      // Cambios de estado (activa, past_due, cancelación programada, etc.) y de
+      // plan: el precio que se está cobrando en Stripe manda sobre el nuestro.
       case "customer.subscription.updated": {
         const sub = event.data.object as Stripe.Subscription;
+        const plan = planForPriceId(sub.items.data[0]?.price?.id);
         await prisma.subscription.updateMany({
           where: { stripeSubscriptionId: sub.id },
           data: {
             status: mapStripeStatus(sub.status),
             currentPeriodEnd: toDate(sub.current_period_end) ?? undefined,
+            ...(plan ? { plan } : {}),
           },
         });
         break;

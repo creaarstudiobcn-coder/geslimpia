@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { stripe, stripeConfigured, priceIdForPlan } from "@/lib/stripe";
+import { stripe, stripeConfigured, demoMode, priceIdForPlan } from "@/lib/stripe";
+import { appBaseUrl } from "@/lib/site";
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -12,8 +13,20 @@ export async function POST(req: Request) {
 
   const body = await req.json().catch(() => ({}));
   const plan = body.plan === "COMPLETO" ? "COMPLETO" : "BASICO";
-  const appUrl =
-    process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const appUrl = appBaseUrl();
+
+  // Si ya tiene una suscripción activa y vigente, no arrancamos otro checkout:
+  // el upsert a PENDIENTE de más abajo le quitaría el acceso que ya ha pagado
+  // (botón atrás, doble clic o un enlace guardado bastan para provocarlo).
+  // Para cambiar de plan está /dashboard/plan, que sí lo hace a través de Stripe.
+  const existing = await prisma.subscription.findUnique({
+    where: { userId: session.user.id },
+  });
+  const vigente =
+    !existing?.currentPeriodEnd || existing.currentPeriodEnd > new Date();
+  if (existing?.status === "ACTIVA" && vigente) {
+    return NextResponse.json({ url: "/dashboard/plan" });
+  }
 
   // --- MODO STRIPE (claves reales configuradas) ---
   if (stripeConfigured && stripe) {
@@ -55,6 +68,18 @@ export async function POST(req: Request) {
   }
 
   // --- MODO DEMO (sin claves de Stripe): activamos directamente ---
+  // Nunca en producción: una env var de Stripe que falte o no propague no puede
+  // convertirse en suscripciones gratis silenciosas.
+  if (!demoMode) {
+    console.error(
+      "checkout: Stripe no está configurado en producción; revisa STRIPE_SECRET_KEY y STRIPE_PRICE_*"
+    );
+    return NextResponse.json(
+      { error: "El pago no está disponible ahora mismo. Inténtalo más tarde." },
+      { status: 503 }
+    );
+  }
+
   const periodEnd = new Date();
   periodEnd.setMonth(periodEnd.getMonth() + 1);
 
