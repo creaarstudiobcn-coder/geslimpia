@@ -8,6 +8,11 @@
 //    no debe tirar todos los registros; el riesgo de spam puntual es menor.
 //  · success:false, action incorrecta o score < 0.5 → FAIL-CLOSED: token forjado o bot.
 const SECRET = process.env.RECAPTCHA_SECRET_KEY;
+// La site key también se mira en el servidor: si no está, el cliente no puede
+// generar token, así que exigirlo aquí solo bloquearía a TODOS los usuarios
+// legítimos (registro y login) sin frenar a ningún bot. reCAPTCHA solo tiene
+// sentido cuando sus DOS mitades están configuradas.
+const SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 const SCORE_THRESHOLD = 0.5;
 const VERIFY_URL = "https://www.google.com/recaptcha/api/siteverify";
 
@@ -19,8 +24,18 @@ export async function verifyRecaptcha(
   token: string | undefined | null,
   expectedAction?: string
 ): Promise<RecaptchaResult> {
-  // Fallback de desarrollo: sin clave secreta no verificamos.
-  if (!SECRET) return { ok: true, skipped: true };
+  // reCAPTCHA desactivado si no está completo (dev sin claves, o prod a la que le
+  // falta una de las dos). Con solo la secret puesta, el cliente no envía token y
+  // rechazar aquí dejaría el registro y el login inutilizables.
+  if (!SECRET || !SITE_KEY) {
+    if (SECRET && !SITE_KEY) {
+      console.warn(
+        "reCAPTCHA: RECAPTCHA_SECRET_KEY está definida pero falta NEXT_PUBLIC_RECAPTCHA_SITE_KEY; " +
+          "la verificación queda DESACTIVADA. Añade la site key en el entorno para reactivarla."
+      );
+    }
+    return { ok: true, skipped: true };
+  }
 
   if (!token) return { ok: false, reason: "missing-token" };
 
