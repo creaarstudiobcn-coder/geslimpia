@@ -104,7 +104,34 @@ export default function SiteFooter() {
           </div>
         </div>
 
-        <div className="mt-10 border-t border-white/10 pt-6 text-xs text-white/60">
+        <div className="mt-10 flex flex-col items-center gap-3 border-t border-white/10 pt-6 sm:flex-row sm:justify-between">
+          <span className="text-xs font-medium uppercase tracking-wide text-white/50">
+            Pagos 100% seguros
+          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            {[
+              { src: "/pagos/stripe.png", alt: "Stripe" },
+              { src: "/pagos/apple-pay.png", alt: "Apple Pay" },
+              { src: "/pagos/google-pay.jpg", alt: "Google Pay" },
+              { src: "/pagos/sabadell.jpg", alt: "Banco Sabadell" },
+            ].map((m) => (
+              <span
+                key={m.alt}
+                className="inline-flex h-9 items-center rounded-md bg-white px-3"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={m.src}
+                  alt={m.alt}
+                  className="h-5 w-auto"
+                  loading="lazy"
+                />
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-8 text-xs text-white/60">
           <p>
             <strong className="text-white/80">
               GesLimpia es una plataforma de conexión, no una empresa de
