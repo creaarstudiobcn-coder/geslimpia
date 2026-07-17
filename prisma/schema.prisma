@@ -71,9 +71,14 @@ model Subscription {
   user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   plan                 String // "BASICO" | "COMPLETO"
   status               String    @default("PENDIENTE") // "PENDIENTE" | "ACTIVA" | "CANCELADA"
+  // Cupo de contactos consumido en el periodo en curso. Es un espejo para
+  // mostrar en paneles: el valor que manda lo calcula lib/suscripcion.ts.
   contactsUsed         Int       @default(0)
   stripeCustomerId     String?
   stripeSubscriptionId String?
+  // Periodo de facturación en curso, tal cual lo reporta Stripe. El inicio
+  // delimita qué contactos cuentan para el cupo de este mes.
+  currentPeriodStart   DateTime?
   currentPeriodEnd     DateTime?
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
@@ -92,6 +97,10 @@ model Booking {
   createdAt     DateTime @default(now())
 
   messages Message[]
+
+  // El cupo de contactos se calcula recorriendo las reservas del hogar por
+  // fecha, así que este índice sostiene la ruta más caliente del producto.
+  @@index([homeUserId, createdAt])
 }
 
 model Message {

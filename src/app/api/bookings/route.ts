@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { PLANES, type PlanId } from "@/lib/constants";
 import { sendNewContactEmail } from "@/lib/email";
+import { contactUsage, subscriptionIsActive } from "@/lib/suscripcion";
 
 // Crear una reserva / contacto (solo HOGAR con suscripción activa)
 export async function POST(req: Request) {
@@ -15,7 +15,7 @@ export async function POST(req: Request) {
   const sub = await prisma.subscription.findUnique({
     where: { userId: session.user.id },
   });
-  if (!sub || sub.status !== "ACTIVA") {
+  if (!sub || !subscriptionIsActive(sub)) {
     return NextResponse.json(
       { error: "Necesitas una suscripción activa para contactar limpiadoras." },
       { status: 402 }
@@ -42,21 +42,22 @@ export async function POST(req: Request) {
     );
   }
 
-  // Límite de contactos según plan: contamos limpiadoras distintas ya contactadas
-  const contactedCleaners = await prisma.booking.findMany({
-    where: { homeUserId: session.user.id },
-    select: { cleanerUserId: true },
-    distinct: ["cleanerUserId"],
-  });
-  const contactedIds = new Set(contactedCleaners.map((b) => b.cleanerUserId));
-  const isNewContact = !contactedIds.has(cleanerUserId);
-  const limit = PLANES[sub.plan as PlanId].contactos;
+  // Cupo de contactos del periodo en curso. Contactar de nuevo a una limpiadora
+  // que ya conocías no gasta cupo.
+  const usage = await contactUsage(session.user.id, sub);
+  const isNewContact = !usage.yaContactadas.has(cleanerUserId);
 
-  if (isNewContact && contactedIds.size >= limit) {
+  if (isNewContact && usage.usados >= usage.limite) {
+    const renovacion = sub.currentPeriodEnd
+      ? ` Tu cupo se renueva el ${sub.currentPeriodEnd.toLocaleDateString(
+          "es-ES",
+          { day: "numeric", month: "long" }
+        )}.`
+      : "";
     return NextResponse.json(
       {
         error: "limit",
-        message: `Has alcanzado el máximo de ${limit} limpiadoras de tu plan. Mejora tu plan para contactar más.`,
+        message: `Has contactado ${usage.limite} limpiadoras nuevas este mes, el máximo de tu plan.${renovacion} Si necesitas más, puedes mejorar tu plan.`,
       },
       { status: 403 }
     );
@@ -83,7 +84,7 @@ export async function POST(req: Request) {
   if (isNewContact) {
     await prisma.subscription.update({
       where: { userId: session.user.id },
-      data: { contactsUsed: contactedIds.size + 1 },
+      data: { contactsUsed: usage.usados + 1 },
     });
   }
 

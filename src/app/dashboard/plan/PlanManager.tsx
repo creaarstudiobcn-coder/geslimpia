@@ -79,13 +79,16 @@ export default function PlanManager({
             Próxima renovación:{" "}
             {new Date(periodEnd).toLocaleDateString("es-ES", {
               dateStyle: "long",
-            })}
+            })}{" "}
+            · ese día tu cupo vuelve a {limit}
           </p>
         )}
 
         <div className="mt-5">
           <div className="mb-1 flex justify-between text-sm">
-            <span className="text-slate-600">Limpiadoras contactadas</span>
+            <span className="text-slate-600">
+              Limpiadoras nuevas contactadas este mes
+            </span>
             <span className="font-medium text-petroleo">
               {contactsUsed} / {limit}
             </span>

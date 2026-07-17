@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { PageTitle } from "@/components/ui";
-import { PLANES, type PlanId } from "@/lib/constants";
+import { type PlanId } from "@/lib/constants";
+import { contactUsage, subscriptionIsActive } from "@/lib/suscripcion";
 import PlanManager from "./PlanManager";
 
 export const metadata = { title: "Mi plan · GesLimpia" };
@@ -12,6 +13,8 @@ export default async function PlanPage() {
   if (user.role !== "HOGAR") redirect("/dashboard");
 
   const sub = user.subscription;
+  const activa = subscriptionIsActive(sub);
+  const usage = sub && activa ? await contactUsage(user.id, sub) : null;
 
   return (
     <>
@@ -20,7 +23,7 @@ export default async function PlanPage() {
         subtitle="Gestiona tu suscripción de acceso a la plataforma."
       />
 
-      {!sub || sub.status !== "ACTIVA" ? (
+      {!sub || !usage ? (
         <div className="card max-w-xl p-8 text-center">
           <span className="text-4xl">💳</span>
           <h2 className="mt-3 text-xl font-bold text-petroleo">
@@ -36,8 +39,8 @@ export default async function PlanPage() {
       ) : (
         <PlanManager
           plan={sub.plan as PlanId}
-          contactsUsed={sub.contactsUsed}
-          limit={PLANES[sub.plan as PlanId].contactos}
+          contactsUsed={usage.usados}
+          limit={usage.limite}
           periodEnd={sub.currentPeriodEnd?.toISOString() ?? null}
         />
       )}

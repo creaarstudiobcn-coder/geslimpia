@@ -54,7 +54,7 @@ export const PLANES: Record<
     contactos: 3,
     destacado: false,
     features: [
-      "Contacta hasta 3 limpiadoras",
+      "Contacta hasta 3 limpiadoras nuevas cada mes",
       "Reservas ilimitadas",
       "Mensajería directa",
       "Sin permanencia",
@@ -68,7 +68,7 @@ export const PLANES: Record<
     contactos: 10,
     destacado: true,
     features: [
-      "Contacta hasta 10 limpiadoras",
+      "Contacta hasta 10 limpiadoras nuevas cada mes",
       "Reservas ilimitadas",
       "Mensajería directa",
       "Soporte prioritario",

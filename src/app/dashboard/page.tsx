@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { parseList, PLANES, type PlanId } from "@/lib/constants";
+import { contactUsage, subscriptionIsActive } from "@/lib/suscripcion";
 import { PageTitle } from "@/components/ui";
 import CleanerSearch from "./CleanerSearch";
 import CleanerRequests from "./CleanerRequests";
@@ -44,7 +45,7 @@ export default async function DashboardHome({
 
   // ---------- HOGAR ----------
   const sub = user.subscription;
-  const activa = sub?.status === "ACTIVA";
+  const activa = subscriptionIsActive(sub);
 
   if (!activa) {
     return (
@@ -84,20 +85,16 @@ export default async function DashboardHome({
     orderBy: [{ verified: "desc" }, { ratingAvg: "desc" }, { ratingCount: "desc" }],
   });
 
-  // Favoritas y contactos previos
-  const [favorites, contacted] = await Promise.all([
+  // Favoritas y cupo de contactos del periodo en curso
+  const [favorites, usage] = await Promise.all([
     prisma.favorite.findMany({
       where: { homeUserId: user.id },
       select: { cleanerUserId: true },
     }),
-    prisma.booking.findMany({
-      where: { homeUserId: user.id },
-      select: { cleanerUserId: true },
-      distinct: ["cleanerUserId"],
-    }),
+    contactUsage(user.id, sub!),
   ]);
   const favSet = new Set(favorites.map((f) => f.cleanerUserId));
-  const contactedSet = new Set(contacted.map((c) => c.cleanerUserId));
+  const contactedSet = usage.yaContactadas;
 
   const list = cleaners
     .map((c) => ({
@@ -121,20 +118,19 @@ export default async function DashboardHome({
     .filter((c) => (servicio ? c.services.includes(servicio) : true));
 
   const plan = PLANES[(sub!.plan as PlanId)];
-  const contactCount = contactedSet.size;
 
   return (
     <>
       <PageTitle
         title="Buscar limpiadoras"
-        subtitle={`Plan ${plan.nombre}: has contactado ${contactCount} de ${plan.contactos} limpiadoras.`}
+        subtitle={`Plan ${plan.nombre}: te quedan ${usage.restantes} de ${usage.limite} limpiadoras nuevas este mes.`}
       />
       <CleanerSearch
         cleaners={list}
         filters={{ zona: zona ?? "", servicio: servicio ?? "", disponible: soloDisponibles }}
         contactInfo={{
-          used: contactCount,
-          limit: plan.contactos,
+          used: usage.usados,
+          limit: usage.limite,
           planName: plan.nombre,
         }}
       />

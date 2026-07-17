@@ -63,15 +63,18 @@ export async function POST(req: Request) {
         if (!userId) break;
 
         // Intentamos leer el periodo real de la suscripción recién creada.
+        let periodStart: Date | null = null;
         let periodEnd: Date | null = null;
         if (s.subscription) {
           const sub = await stripe.subscriptions.retrieve(s.subscription as string);
+          periodStart = toDate(sub.current_period_start);
           periodEnd = toDate(sub.current_period_end);
         }
         if (!periodEnd) {
           periodEnd = new Date();
           periodEnd.setMonth(periodEnd.getMonth() + 1);
         }
+        periodStart = periodStart ?? new Date();
 
         await prisma.subscription.upsert({
           where: { userId },
@@ -80,6 +83,7 @@ export async function POST(req: Request) {
             status: "ACTIVA",
             stripeCustomerId: (s.customer as string) ?? undefined,
             stripeSubscriptionId: (s.subscription as string) ?? undefined,
+            currentPeriodStart: periodStart,
             currentPeriodEnd: periodEnd,
           },
           create: {
@@ -88,6 +92,7 @@ export async function POST(req: Request) {
             status: "ACTIVA",
             stripeCustomerId: (s.customer as string) ?? undefined,
             stripeSubscriptionId: (s.subscription as string) ?? undefined,
+            currentPeriodStart: periodStart,
             currentPeriodEnd: periodEnd,
           },
         });
@@ -117,11 +122,15 @@ export async function POST(req: Request) {
         if (!subId) break;
 
         const sub = await stripe.subscriptions.retrieve(subId);
+        // Mover currentPeriodStart es lo que reinicia el cupo de contactos del
+        // mes: el cliente que renueva vuelve a tener su plan entero.
         await prisma.subscription.updateMany({
           where: { stripeSubscriptionId: subId },
           data: {
             status: "ACTIVA",
+            currentPeriodStart: toDate(sub.current_period_start) ?? undefined,
             currentPeriodEnd: toDate(sub.current_period_end) ?? undefined,
+            contactsUsed: 0,
           },
         });
         break;
@@ -149,6 +158,7 @@ export async function POST(req: Request) {
           where: { stripeSubscriptionId: sub.id },
           data: {
             status: mapStripeStatus(sub.status),
+            currentPeriodStart: toDate(sub.current_period_start) ?? undefined,
             currentPeriodEnd: toDate(sub.current_period_end) ?? undefined,
             ...(plan ? { plan } : {}),
           },

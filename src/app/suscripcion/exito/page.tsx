@@ -32,17 +32,20 @@ export default async function ExitoPage({
           (s.metadata?.plan as "BASICO" | "COMPLETO") || "BASICO";
 
         // Periodo real de Stripe; el mes estimado solo como último recurso.
+        let periodStart: Date | null = null;
         let periodEnd: Date | null = null;
         if (s.subscription) {
           const stripeSub = await stripe.subscriptions.retrieve(
             s.subscription as string
           );
+          periodStart = new Date(stripeSub.current_period_start * 1000);
           periodEnd = new Date(stripeSub.current_period_end * 1000);
         }
         if (!periodEnd) {
           periodEnd = new Date();
           periodEnd.setMonth(periodEnd.getMonth() + 1);
         }
+        periodStart = periodStart ?? new Date();
 
         await prisma.subscription.upsert({
           where: { userId: user.id },
@@ -51,6 +54,7 @@ export default async function ExitoPage({
             status: "ACTIVA",
             stripeCustomerId: (s.customer as string) ?? undefined,
             stripeSubscriptionId: (s.subscription as string) ?? undefined,
+            currentPeriodStart: periodStart,
             currentPeriodEnd: periodEnd,
           },
           create: {
@@ -59,6 +63,7 @@ export default async function ExitoPage({
             status: "ACTIVA",
             stripeCustomerId: (s.customer as string) ?? undefined,
             stripeSubscriptionId: (s.subscription as string) ?? undefined,
+            currentPeriodStart: periodStart,
             currentPeriodEnd: periodEnd,
           },
         });

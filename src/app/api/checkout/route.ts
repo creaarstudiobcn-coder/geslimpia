@@ -80,16 +80,24 @@ export async function POST(req: Request) {
     );
   }
 
+  const periodStart = new Date();
   const periodEnd = new Date();
   periodEnd.setMonth(periodEnd.getMonth() + 1);
 
   await prisma.subscription.upsert({
     where: { userId: session.user.id },
-    update: { plan, status: "ACTIVA", currentPeriodEnd: periodEnd },
+    update: {
+      plan,
+      status: "ACTIVA",
+      currentPeriodStart: periodStart,
+      currentPeriodEnd: periodEnd,
+      contactsUsed: 0,
+    },
     create: {
       userId: session.user.id,
       plan,
       status: "ACTIVA",
+      currentPeriodStart: periodStart,
       currentPeriodEnd: periodEnd,
     },
   });
