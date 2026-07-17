@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 import { put, del } from "@vercel/blob";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getActiveSession } from "@/lib/session";
 
 // Subida de la foto de perfil de la limpiadora a Vercel Blob.
 // El cliente ya redimensiona y convierte a webp antes de enviar (optimización),
@@ -12,7 +11,7 @@ const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 const ALLOWED = ["image/jpeg", "image/png", "image/webp"];
 
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
+  const session = await getActiveSession();
   if (!session?.user?.id || session.user.role !== "LIMPIADORA") {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 });
   }
@@ -73,7 +72,7 @@ export async function POST(req: Request) {
 
 // Eliminar la foto de perfil (volver al avatar con inicial).
 export async function DELETE() {
-  const session = await getServerSession(authOptions);
+  const session = await getActiveSession();
   if (!session?.user?.id || session.user.role !== "LIMPIADORA") {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 });
   }

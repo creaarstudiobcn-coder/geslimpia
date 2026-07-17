@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getActiveSession } from "@/lib/session";
 
 // Lado USUARIO del chat de soporte (hogar o limpiadora con el equipo de GesLimpia).
 
 // GET /api/support — el usuario lee su propio hilo. Marca como leídos los del admin.
 export async function GET() {
-  const session = await getServerSession(authOptions);
+  const session = await getActiveSession();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 });
   }
@@ -34,7 +33,7 @@ export async function GET() {
 
 // POST /api/support — el usuario responde en su hilo.
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
+  const session = await getActiveSession();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 });
   }

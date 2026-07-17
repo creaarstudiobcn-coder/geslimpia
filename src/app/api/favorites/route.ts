@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getActiveSession } from "@/lib/session";
 
 // Alternar favorita (solo HOGAR)
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
+  const session = await getActiveSession();
   if (!session?.user?.id || session.user.role !== "HOGAR") {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 });
   }

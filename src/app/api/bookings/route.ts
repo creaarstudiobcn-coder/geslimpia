@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getActiveSession } from "@/lib/session";
 import { sendNewContactEmail } from "@/lib/email";
 import { crearReservaConCupo, subscriptionIsActive } from "@/lib/suscripcion";
 
 // Crear una reserva / contacto (solo HOGAR con suscripción activa)
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
+  const session = await getActiveSession();
   if (!session?.user?.id || session.user.role !== "HOGAR") {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 });
   }

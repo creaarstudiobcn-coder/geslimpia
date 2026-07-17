@@ -1,14 +1,13 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getActiveSession } from "@/lib/session";
 import { recomputeCleanerRating } from "@/lib/reviews";
 import { sendNewReviewEmail } from "@/lib/email";
 
 // Leer las reseñas (visibles) de una limpiadora — para que los hogares las vean.
 // Excluye las ocultadas por el admin.
 export async function GET(req: Request) {
-  const session = await getServerSession(authOptions);
+  const session = await getActiveSession();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 });
   }
@@ -39,7 +38,7 @@ export async function GET(req: Request) {
 
 // Crear una valoración a una limpiadora (solo HOGAR, requiere reserva completada)
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
+  const session = await getActiveSession();
   if (!session?.user?.id || session.user.role !== "HOGAR") {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 });
   }
