@@ -47,8 +47,10 @@ export default function RolePicker({ defaultCiudad }: { defaultCiudad: string })
       // Navegación DURA (no router.push): garantiza que el middleware reciba la cookie
       // ya con el rol refrescado. Con navegación de cliente podría leer el token antiguo
       // (rol null) y rebotar de nuevo a /onboarding/rol → bucle.
-      const dest = role === "LIMPIADORA" ? "/onboarding" : "/suscripcion";
-      window.location.assign(dest);
+      // Ambos roles entran directos al panel: allí el propio dashboard guía el
+      // siguiente paso (suscribirse el hogar, completar perfil la limpiadora)
+      // sin sacar al usuario del panel.
+      window.location.assign("/dashboard");
     } catch {
       setError("Error de conexión. Inténtalo de nuevo.");
       setLoading(false);

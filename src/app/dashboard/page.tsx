@@ -22,12 +22,27 @@ export default async function DashboardHome({
       orderBy: { createdAt: "desc" },
       include: { homeUser: { select: { name: true, ciudad: true } } },
     });
+    const perfilCompleto = user.cleanerProfile?.onboarded ?? false;
     return (
       <>
         <PageTitle
           title="Solicitudes entrantes"
           subtitle="Hogares que te han contactado. Acepta o rechaza los turnos."
         />
+        {!perfilCompleto && (
+          <div className="card mb-6 flex flex-col gap-3 border-agua/40 bg-agua/5 p-6 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="font-bold text-petroleo">Completa tu perfil</h2>
+              <p className="mt-1 text-sm text-slate-600">
+                Hasta que no lo completes no apareces en las búsquedas de los
+                hogares. Tú fijas tu tarifa por hora.
+              </p>
+            </div>
+            <Link href="/onboarding" className="btn-primary shrink-0">
+              Completar perfil
+            </Link>
+          </div>
+        )}
         <CleanerRequests
           bookings={bookings.map((b) => ({
             id: b.id,
