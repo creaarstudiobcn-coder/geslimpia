@@ -102,6 +102,7 @@ model Booking {
   createdAt     DateTime @default(now())
 
   messages Message[]
+  review   Review?
 
   // El cupo de contactos se calcula recorriendo las reservas del hogar por
   // fecha, así que este índice sostiene la ruta más caliente del producto.
@@ -120,6 +121,12 @@ model Message {
 
 model Review {
   id            String   @id @default(cuid())
+  // Reserva valorada. Es lo que limita las reseñas: una por servicio prestado.
+  // Sin esto, un hogar podía crear reseñas en bucle y hundir la media de una
+  // limpiadora. Es opcional solo porque las reseñas anteriores a este campo no
+  // tienen reserva asociada; la API exige siempre una para las nuevas.
+  bookingId     String?  @unique
+  booking       Booking? @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   cleanerUserId String
   cleanerUser   User     @relation("ReviewCleaner", fields: [cleanerUserId], references: [id], onDelete: Cascade)
   homeUserId    String

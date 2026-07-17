@@ -45,32 +45,58 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json().catch(() => ({}));
-  const cleanerUserId = String(body.cleanerUserId ?? "");
+  const bookingId = String(body.bookingId ?? "");
   const rating = Math.min(5, Math.max(1, Number(body.rating) || 0));
-  const comment = String(body.comment ?? "").trim();
+  const comment = String(body.comment ?? "").trim().slice(0, 1000);
 
-  if (!cleanerUserId || rating < 1) {
+  if (!bookingId || rating < 1) {
     return NextResponse.json({ error: "Datos incompletos." }, { status: 400 });
   }
 
-  // Debe existir una reserva completada con esa limpiadora
-  const done = await prisma.booking.findFirst({
-    where: {
-      homeUserId: session.user.id,
-      cleanerUserId,
-      status: "COMPLETADA",
-    },
+  // Se valora una reserva concreta, no a una limpiadora en abstracto: es lo que
+  // ata cada reseña a un servicio realmente prestado.
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    select: { id: true, homeUserId: true, cleanerUserId: true, status: true },
   });
-  if (!done) {
+  if (!booking || booking.homeUserId !== session.user.id) {
+    return NextResponse.json({ error: "Reserva no encontrada." }, { status: 404 });
+  }
+  if (booking.status !== "COMPLETADA") {
     return NextResponse.json(
       { error: "Solo puedes valorar tras una limpieza completada." },
       { status: 403 }
     );
   }
 
-  await prisma.review.create({
-    data: { cleanerUserId, homeUserId: session.user.id, rating, comment },
-  });
+  const cleanerUserId = booking.cleanerUserId;
+
+  try {
+    await prisma.review.create({
+      data: {
+        bookingId: booking.id,
+        cleanerUserId,
+        homeUserId: session.user.id,
+        rating,
+        comment,
+      },
+    });
+  } catch (err) {
+    // El índice único de bookingId es la garantía real de "una reseña por
+    // reserva": comprobar antes con un findFirst dejaría una ventana entre la
+    // comprobación y la escritura.
+    if (
+      typeof err === "object" &&
+      err !== null &&
+      (err as { code?: string }).code === "P2002"
+    ) {
+      return NextResponse.json(
+        { error: "Ya has valorado esta reserva." },
+        { status: 409 }
+      );
+    }
+    throw err;
+  }
 
   // Recalcular media (solo reseñas visibles)
   await recomputeCleanerRating(cleanerUserId);

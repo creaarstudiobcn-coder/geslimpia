@@ -20,15 +20,16 @@ export default async function ReservasPage() {
     },
   });
 
-  // Reseñas ya escritas por el hogar (para no duplicar)
+  // Reservas que el hogar ya ha valorado. Por reserva, no por limpiadora: cada
+  // servicio prestado se valora una vez.
   const reviewed = isHome
     ? new Set(
         (
           await prisma.review.findMany({
-            where: { homeUserId: user.id },
-            select: { cleanerUserId: true },
+            where: { homeUserId: user.id, bookingId: { not: null } },
+            select: { bookingId: true },
           })
-        ).map((r) => r.cleanerUserId)
+        ).map((r) => r.bookingId as string)
       )
     : new Set<string>();
 
@@ -85,9 +86,9 @@ export default async function ReservasPage() {
                   </Link>
                   {isHome &&
                     b.status === "COMPLETADA" &&
-                    !reviewed.has(b.cleanerUserId) && (
+                    !reviewed.has(b.id) && (
                       <ReviewButton
-                        cleanerUserId={b.cleanerUserId}
+                        bookingId={b.id}
                         cleanerName={b.cleanerUser.name}
                       />
                     )}

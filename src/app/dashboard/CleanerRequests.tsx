@@ -22,16 +22,33 @@ export default function CleanerRequests({
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<{ id: string; mensaje: string } | null>(
+    null
+  );
 
   async function setStatus(id: string, status: string) {
     setBusy(id);
-    await fetch(`/api/bookings/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
-    });
-    setBusy(null);
-    router.refresh();
+    setError(null);
+    try {
+      const res = await fetch(`/api/bookings/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError({
+          id,
+          mensaje: data.error ?? "No se pudo actualizar la reserva.",
+        });
+        return;
+      }
+      router.refresh();
+    } catch {
+      setError({ id, mensaje: "Error de conexión. Inténtalo de nuevo." });
+    } finally {
+      setBusy(null);
+    }
   }
 
   if (bookings.length === 0) {
@@ -105,6 +122,12 @@ export default function CleanerRequests({
               💬 Abrir chat
             </Link>
           </div>
+
+          {error?.id === b.id && (
+            <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+              {error.mensaje}
+            </p>
+          )}
         </div>
       ))}
     </div>

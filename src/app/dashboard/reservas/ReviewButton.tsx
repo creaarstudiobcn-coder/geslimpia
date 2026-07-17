@@ -4,10 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function ReviewButton({
-  cleanerUserId,
+  bookingId,
   cleanerName,
 }: {
-  cleanerUserId: string;
+  bookingId: string;
   cleanerName: string;
 }) {
   const router = useRouter();
@@ -24,7 +24,7 @@ export default function ReviewButton({
     const res = await fetch("/api/reviews", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ cleanerUserId, rating, comment }),
+      body: JSON.stringify({ bookingId, rating, comment }),
     });
     setLoading(false);
     if (!res.ok) {
