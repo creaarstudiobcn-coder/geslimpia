@@ -1,9 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { useSession } from "next-auth/react";
+import { useSession, getSession } from "next-auth/react";
 import { POBLACIONES } from "@/lib/constants";
 import ConsentCheckbox from "@/components/ConsentCheckbox";
+
+// Navega al panel, pero solo cuando el rol ya viaja en el token. El middleware
+// lee el rol del cookie JWT; si navegamos antes de que se propague, rebota de
+// vuelta a /onboarding. Confirmamos con getSession y, si hace falta, esperamos.
+async function irAlPanel(refrescar: () => Promise<unknown>) {
+  await refrescar();
+  for (let i = 0; i < 8; i++) {
+    const s = await getSession();
+    if (s?.user?.role) break;
+    await new Promise((r) => setTimeout(r, 300));
+    await refrescar();
+  }
+  window.location.assign("/dashboard");
+}
 
 export default function RolePicker({ defaultCiudad }: { defaultCiudad: string }) {
   const { update } = useSession();
@@ -40,9 +54,9 @@ export default function RolePicker({ defaultCiudad }: { defaultCiudad: string })
       // ha rebotado hasta aquí). No es un error para el usuario: refrescamos el
       // token y lo llevamos a su panel, en vez de dejarlo atascado en esta
       // pantalla sin salida.
+      // 409 = la cuenta ya tenía rol; igualmente la llevamos al panel.
       if (res.status === 409) {
-        await update();
-        window.location.assign("/dashboard");
+        await irAlPanel(update);
         return;
       }
       if (!res.ok) {
@@ -50,15 +64,9 @@ export default function RolePicker({ defaultCiudad }: { defaultCiudad: string })
         setLoading(false);
         return;
       }
-      // Refresca el JWT para que el rol viaje en el token (y el middleware lo deje pasar).
-      await update();
-      // Navegación DURA (no router.push): garantiza que el middleware reciba la cookie
-      // ya con el rol refrescado. Con navegación de cliente podría leer el token antiguo
-      // (rol null) y rebotar de nuevo a /onboarding/rol → bucle.
       // Ambos roles entran directos al panel: allí el propio dashboard guía el
-      // siguiente paso (suscribirse el hogar, completar perfil la limpiadora)
-      // sin sacar al usuario del panel.
-      window.location.assign("/dashboard");
+      // siguiente paso (suscribirse el hogar, completar perfil la limpiadora).
+      await irAlPanel(update);
     } catch {
       setError("Error de conexión. Inténtalo de nuevo.");
       setLoading(false);
