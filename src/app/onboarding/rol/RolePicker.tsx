@@ -28,6 +28,15 @@ export default function RolePicker({ defaultCiudad }: { defaultCiudad: string })
         body: JSON.stringify({ role, ciudad, consent }),
       });
       const data = await res.json();
+      // 409 = la cuenta YA tiene rol (token desactualizado que aún dice null y
+      // ha rebotado hasta aquí). No es un error para el usuario: refrescamos el
+      // token y lo llevamos a su panel, en vez de dejarlo atascado en esta
+      // pantalla sin salida.
+      if (res.status === 409) {
+        await update();
+        window.location.assign("/dashboard");
+        return;
+      }
       if (!res.ok) {
         setError(data.error ?? "No se pudo guardar tu elección.");
         setLoading(false);
