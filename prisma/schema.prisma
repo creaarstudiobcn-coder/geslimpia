@@ -27,6 +27,11 @@ model User {
   role         String? // "HOGAR" | "LIMPIADORA" | "ADMIN" | null (null = aún no ha elegido rol)
   ciudad       String? // opcional: las cuentas de Google la eligen en /onboarding/rol
   active       Boolean  @default(true) // false = cuenta desactivada por el admin (no puede entrar ni aparece en listados)
+  // Prueba del consentimiento (RGPD art. 7.1: hay que poder demostrarlo).
+  // Guardamos cuándo se aceptó y QUÉ versión de los textos legales estaba
+  // vigente. null = alta anterior a que se recogiera; no se rellena a posteriori.
+  consentAt      DateTime?
+  consentVersion String?
   createdAt    DateTime @default(now())
 
   cleanerProfile CleanerProfile?

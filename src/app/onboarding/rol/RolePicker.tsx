@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { POBLACIONES } from "@/lib/constants";
+import ConsentCheckbox from "@/components/ConsentCheckbox";
 
 export default function RolePicker({ defaultCiudad }: { defaultCiudad: string }) {
   const { update } = useSession();
@@ -12,6 +13,7 @@ export default function RolePicker({ defaultCiudad }: { defaultCiudad: string })
       ? defaultCiudad
       : POBLACIONES[0]
   );
+  const [consent, setConsent] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -23,7 +25,7 @@ export default function RolePicker({ defaultCiudad }: { defaultCiudad: string })
       const res = await fetch("/api/onboarding/rol", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role, ciudad }),
+        body: JSON.stringify({ role, ciudad, consent }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -89,13 +91,19 @@ export default function RolePicker({ defaultCiudad }: { defaultCiudad: string })
         </select>
       </div>
 
+      <ConsentCheckbox checked={consent} onChange={setConsent} />
+
       {error && (
         <p className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">
           {error}
         </p>
       )}
 
-      <button type="submit" disabled={loading} className="btn-primary w-full">
+      <button
+        type="submit"
+        disabled={loading || !consent}
+        className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-50"
+      >
         {loading ? "Guardando…" : "Continuar"}
       </button>
 

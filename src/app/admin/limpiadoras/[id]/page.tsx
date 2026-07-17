@@ -48,6 +48,16 @@ export default async function AdminLimpiadoraDetalle({
         <span className="text-xs text-slate-400">
           Alta: {user.createdAt.toLocaleDateString("es-ES")}
         </span>
+        {user.consentAt ? (
+          <span className="text-xs text-slate-400">
+            · Acepta los textos legales v{user.consentVersion} el{" "}
+            {user.consentAt.toLocaleDateString("es-ES")}
+          </span>
+        ) : (
+          <span className="text-xs text-amber-600">
+            · Sin consentimiento acreditado
+          </span>
+        )}
       </div>
 
       {/* Acciones */}

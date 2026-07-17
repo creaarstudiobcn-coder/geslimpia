@@ -36,6 +36,19 @@ export default async function AdminHogarDetalle({
         <span className="text-xs text-slate-400">
           Alta: {user.createdAt.toLocaleDateString("es-ES")} · {user.ciudad ?? "—"}
         </span>
+        {/* Prueba del consentimiento: el RGPD obliga a poder demostrarlo, así
+            que tiene que ser consultable, no solo estar en la BD. */}
+        {user.consentAt ? (
+          <span className="text-xs text-slate-400">
+            · Acepta los textos legales v{user.consentVersion} el{" "}
+            {user.consentAt.toLocaleDateString("es-ES")}
+          </span>
+        ) : (
+          <span className="text-xs text-amber-600">
+            · Sin consentimiento acreditado (alta anterior al registro de
+            consentimiento)
+          </span>
+        )}
       </div>
 
       <div className="card mb-6 p-5">

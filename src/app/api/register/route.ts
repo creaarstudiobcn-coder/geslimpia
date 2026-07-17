@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { POBLACIONES } from "@/lib/constants";
+import { POBLACIONES, LEGAL_VERSION } from "@/lib/constants";
 import { verifyRecaptcha } from "@/lib/recaptcha";
 import { sendWelcomeEmail } from "@/lib/email";
 
@@ -47,6 +47,18 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
+    // El consentimiento tiene que ser un acto afirmativo del usuario, así que se
+    // valida aquí y no solo en el formulario: la casilla del cliente se puede
+    // saltar llamando a la API directamente.
+    if (body.consent !== true) {
+      return NextResponse.json(
+        {
+          error:
+            "Debes aceptar la Política de Privacidad y los Términos para crear la cuenta.",
+        },
+        { status: 400 }
+      );
+    }
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
@@ -59,7 +71,15 @@ export async function POST(req: Request) {
     const passwordHash = await bcrypt.hash(password, 10);
 
     const user = await prisma.user.create({
-      data: { name, email, passwordHash, role, ciudad },
+      data: {
+        name,
+        email,
+        passwordHash,
+        role,
+        ciudad,
+        consentAt: new Date(),
+        consentVersion: LEGAL_VERSION,
+      },
     });
 
     // Crear perfil de limpiadora vacío para completar en el onboarding

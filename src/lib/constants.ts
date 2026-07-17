@@ -1,5 +1,11 @@
 // Constantes compartidas de GesLimpia
 
+// Versión vigente de los textos legales (ver la cabecera de
+// src/content/legal/privacidad.md). Se guarda junto al consentimiento porque el
+// RGPD exige poder demostrar qué texto concreto aceptó cada persona, no solo que
+// aceptó algo. Al publicar una versión nueva de la política, súbela aquí también.
+export const LEGAL_VERSION = "1.0";
+
 export const POBLACIONES = [
   "Mataró",
   "Argentona",

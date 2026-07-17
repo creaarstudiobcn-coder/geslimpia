@@ -8,6 +8,7 @@ import Logo from "@/components/Logo";
 import GoogleButton from "@/components/GoogleButton";
 import { POBLACIONES } from "@/lib/constants";
 import { useRecaptcha } from "@/lib/useRecaptcha";
+import ConsentCheckbox from "@/components/ConsentCheckbox";
 
 function RegisterForm() {
   const router = useRouter();
@@ -22,6 +23,7 @@ function RegisterForm() {
   const [email, setEmail] = useState("");
   const [ciudad, setCiudad] = useState<string>(POBLACIONES[0]);
   const [password, setPassword] = useState("");
+  const [consent, setConsent] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -34,7 +36,15 @@ function RegisterForm() {
       const res = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, role, ciudad, recaptchaToken }),
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+          role,
+          ciudad,
+          consent,
+          recaptchaToken,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -160,13 +170,19 @@ function RegisterForm() {
         />
       </div>
 
+      <ConsentCheckbox checked={consent} onChange={setConsent} />
+
       {error && (
         <p className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">
           {error}
         </p>
       )}
 
-      <button type="submit" disabled={loading} className="btn-primary w-full">
+      <button
+        type="submit"
+        disabled={loading || !consent}
+        className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-50"
+      >
         {loading ? "Creando cuenta…" : "Crear cuenta"}
       </button>
 
