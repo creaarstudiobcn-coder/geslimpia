@@ -2,7 +2,7 @@
 // IMPORTANTE: sube este número en cada cambio de estrategia de caché. El handler
 // `activate` borra toda caché cuyo nombre no coincida, así que al cambiarlo se
 // purgan los assets viejos y ningún navegador se queda pegado a un build anterior.
-const CACHE = "geslimpia-v2";
+const CACHE = "geslimpia-v3";
 // Assets que precacheamos para que la landing funcione offline.
 const PRECACHE = ["/", "/offline", "/icons/icon-192.png", "/icons/icon-512.png"];
 
@@ -34,34 +34,26 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Navegaciones (documentos): network-first con fallback a caché y a /offline.
-  if (request.mode === "navigate") {
-    event.respondWith(
-      fetch(request)
-        .then((res) => {
+  // NETWORK-FIRST para TODO (documentos y estáticos): los usuarios conectados
+  // reciben SIEMPRE la última versión desplegada. La caché es solo una red de
+  // seguridad para uso offline. Con cache-first, un navegador podía quedarse
+  // ejecutando JavaScript viejo tras un deploy y los botones dejaban de
+  // responder; network-first lo elimina de raíz.
+  event.respondWith(
+    fetch(request)
+      .then((res) => {
+        if (res.ok) {
           const copy = res.clone();
           caches.open(CACHE).then((c) => c.put(request, copy));
-          return res;
+        }
+        return res;
+      })
+      .catch(() =>
+        caches.match(request).then((cached) => {
+          if (cached) return cached;
+          if (request.mode === "navigate") return caches.match("/offline");
+          return Response.error();
         })
-        .catch(() =>
-          caches.match(request).then((cached) => cached || caches.match("/offline"))
-        )
-    );
-    return;
-  }
-
-  // Estáticos (_next, imágenes, iconos): cache-first, y guardamos lo nuevo.
-  event.respondWith(
-    caches.match(request).then(
-      (cached) =>
-        cached ||
-        fetch(request).then((res) => {
-          if (res.ok) {
-            const copy = res.clone();
-            caches.open(CACHE).then((c) => c.put(request, copy));
-          }
-          return res;
-        })
-    )
+      )
   );
 });
