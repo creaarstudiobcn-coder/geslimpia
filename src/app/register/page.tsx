@@ -30,6 +30,12 @@ function RegisterForm() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    if (!consent) {
+      setError(
+        "Marca la casilla para aceptar la Política de Privacidad y los Términos antes de crear la cuenta."
+      );
+      return;
+    }
     setLoading(true);
     try {
       const recaptchaToken = await executeRecaptcha("register");
@@ -180,7 +186,7 @@ function RegisterForm() {
 
       <button
         type="submit"
-        disabled={loading || !consent}
+        disabled={loading}
         className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-50"
       >
         {loading ? "Creando cuenta…" : "Crear cuenta"}

@@ -20,6 +20,14 @@ export default function RolePicker({ defaultCiudad }: { defaultCiudad: string })
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    // Consentimiento obligatorio, pero con mensaje claro en vez de un botón
+    // desactivado que no explica por qué no avanza.
+    if (!consent) {
+      setError(
+        "Marca la casilla para aceptar la Política de Privacidad y los Términos antes de continuar."
+      );
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch("/api/onboarding/rol", {
@@ -112,7 +120,7 @@ export default function RolePicker({ defaultCiudad }: { defaultCiudad: string })
 
       <button
         type="submit"
-        disabled={loading || !consent}
+        disabled={loading}
         className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-50"
       >
         {loading ? "Guardando…" : "Continuar"}
