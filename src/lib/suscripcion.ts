@@ -19,18 +19,29 @@ export type SubscriptionLike = {
   currentPeriodStart: Date | null;
   currentPeriodEnd: Date | null;
   createdAt: Date;
+  // Opcional a propósito: hay llamadas que construyen el objeto a mano y no
+  // tienen la bandera. Ausente equivale a "sin baja programada".
+  cancelAtPeriodEnd?: boolean;
 };
 
 // Una suscripción da acceso si está ACTIVA y su periodo no ha vencido. El estado
 // por sí solo no basta: si el webhook de cancelación se pierde, la fila se
 // quedaría ACTIVA para siempre y el acceso no caducaría nunca.
+//
+// Una baja programada sigue dando acceso: el periodo en curso está pagado y se
+// disfruta entero. Lo que hace es no renovarse.
 export function subscriptionIsActive(
   sub: SubscriptionLike | null | undefined
 ): boolean {
   if (!sub || sub.status !== "ACTIVA") return false;
   if (!sub.currentPeriodEnd) return true;
   const limite = new Date(sub.currentPeriodEnd);
-  limite.setDate(limite.getDate() + DIAS_DE_GRACIA);
+  // Los días de gracia existen para absorber un webhook de RENOVACIÓN que llegue
+  // tarde. Una suscripción dada de baja no va a renovar, así que no hay nada que
+  // absorber: regalarlos aquí sería servicio no pagado.
+  if (!sub.cancelAtPeriodEnd) {
+    limite.setDate(limite.getDate() + DIAS_DE_GRACIA);
+  }
   return limite > new Date();
 }
 

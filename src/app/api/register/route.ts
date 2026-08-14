@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { POBLACIONES, LEGAL_VERSION } from "@/lib/constants";
+import { POBLACIONES, LEGAL_VERSION, PASSWORD_MIN } from "@/lib/constants";
 import { verifyRecaptcha } from "@/lib/recaptcha";
 import { sendWelcomeEmail } from "@/lib/email";
 
@@ -35,9 +35,11 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-    if (password.length < 6) {
+    if (password.length < PASSWORD_MIN) {
       return NextResponse.json(
-        { error: "La contraseña debe tener al menos 6 caracteres." },
+        {
+          error: `La contraseña debe tener al menos ${PASSWORD_MIN} caracteres.`,
+        },
         { status: 400 }
       );
     }

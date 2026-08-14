@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { notFound } from "next/navigation";
 import { authOptions } from "./auth";
 import { prisma } from "./prisma";
+import { sesionAnteriorAlCambio } from "./session";
 
 // Verificación de ADMIN para PÁGINAS (server components). Si no es admin, devuelve
 // notFound() (404) para no revelar la existencia del panel. Devuelve el usuario admin.
@@ -17,6 +18,13 @@ export async function requireAdmin() {
   if (!admin || admin.role !== "ADMIN" || !admin.active) {
     notFound();
   }
+  // La cuenta de admin es el objetivo más goloso: cambiar su contraseña tiene
+  // que cerrar cualquier sesión abierta antes, igual que a los demás usuarios.
+  if (
+    sesionAnteriorAlCambio(session.user.tokenIssuedAt, admin.passwordChangedAt)
+  ) {
+    notFound();
+  }
   return admin;
 }
 
@@ -27,9 +35,14 @@ export async function getAdminId(): Promise<string | null> {
   if (!session?.user?.id || session.user.role !== "ADMIN") return null;
   const admin = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { id: true, role: true, active: true },
+    select: { id: true, role: true, active: true, passwordChangedAt: true },
   });
   if (!admin || admin.role !== "ADMIN" || !admin.active) return null;
+  if (
+    sesionAnteriorAlCambio(session.user.tokenIssuedAt, admin.passwordChangedAt)
+  ) {
+    return null;
+  }
   return admin.id;
 }
 

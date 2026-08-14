@@ -6,6 +6,10 @@
 // aceptó algo. Al publicar una versión nueva de la política, súbela aquí también.
 export const LEGAL_VERSION = "1.0";
 
+// Longitud mínima de contraseña. En un solo sitio para que el alta y el
+// restablecimiento no acaben exigiendo cosas distintas.
+export const PASSWORD_MIN = 6;
+
 export const POBLACIONES = [
   "Mataró",
   "Argentona",

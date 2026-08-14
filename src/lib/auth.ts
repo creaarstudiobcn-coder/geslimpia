@@ -135,6 +135,10 @@ export const authOptions: NextAuthOptions = {
         session.user.role =
           (token.role as "HOGAR" | "LIMPIADORA" | "ADMIN" | null) ?? null;
         session.user.ciudad = (token.ciudad as string | null) ?? null;
+        // `iat` lo pone NextAuth al firmar. Lo exponemos para que session.ts
+        // pueda comparar la antigüedad de la sesión con passwordChangedAt.
+        session.user.tokenIssuedAt =
+          typeof token.iat === "number" ? token.iat : null;
       }
       return session;
     },

@@ -13,7 +13,13 @@
 
 import { SITE_URL } from "@/lib/site";
 
-const RESEND_ENDPOINT = "https://api.resend.com/emails";
+// Base de la API. RESEND_BASE_URL permite apuntar a un buzón local que finge ser
+// Resend para comprobar destinatario, asunto y cuerpo sin gastar cuota ni
+// escribirle a nadie. Sin la variable, va a Resend de verdad.
+const RESEND_BASE_URL = (
+  process.env.RESEND_BASE_URL || "https://api.resend.com"
+).replace(/\/$/, "");
+const RESEND_ENDPOINT = `${RESEND_BASE_URL}/emails`;
 const BRAND = "#16B6BE";
 const FROM = process.env.EMAIL_FROM || "GesLimpia <hola@geslimpia.es>";
 
@@ -266,7 +272,38 @@ export async function sendSubscriptionReceiptEmail(args: {
   });
 }
 
-/** 5. Aviso de nueva reseña a la limpiadora. */
+/**
+ * 5. Enlace para restablecer la contraseña.
+ *
+ * Es el email más crítico: si no sale, la persona se queda sin poder entrar. Un
+ * fallo puntual con una dirección concreta se registra en el log (contarlo en
+ * pantalla revelaría si esa cuenta existe); que falte la configuración de Resend
+ * sí lo avisa la ruta, porque no es información de ninguna cuenta.
+ */
+export async function sendPasswordResetEmail(args: {
+  to: string;
+  name: string;
+  token: string;
+  minutos: number;
+}): Promise<boolean> {
+  const nombre = args.name?.trim();
+  // El token va en la URL, así que se codifica: nunca se interpola crudo.
+  const ruta = `/restablecer?token=${encodeURIComponent(args.token)}`;
+  return sendEmail({
+    to: args.to,
+    subject: "Restablecer tu contraseña de GesLimpia",
+    html: layout({
+      heading: nombre ? `Hola, ${escapeHtml(nombre)}` : "Restablecer contraseña",
+      intro: `Has pedido cambiar la contraseña de tu cuenta de GesLimpia. Pulsa el botón y elige una nueva. El enlace caduca en ${args.minutos} minutos y solo se puede usar una vez.`,
+      bodyHtml:
+        '<p style="margin:0 0 18px;font-size:14px;line-height:1.6;color:#3b4a52;">Si no has sido tú, puedes ignorar este correo: tu contraseña seguirá siendo la misma y nadie ha accedido a tu cuenta.</p>',
+      ctaLabel: "Elegir contraseña nueva",
+      ctaPath: ruta,
+    }),
+  });
+}
+
+/** 6. Aviso de nueva reseña a la limpiadora. */
 export async function sendNewReviewEmail(args: {
   to: string;
   cleanerName: string;

@@ -81,6 +81,10 @@ export async function POST(req: Request) {
           update: {
             plan,
             status: "ACTIVA",
+            // Alta nueva sobre una fila vieja (alguien que se dio de baja y
+            // vuelve): la baja programada de la suscripción anterior no puede
+            // heredarse, o volvería a caducar al final del primer mes.
+            cancelAtPeriodEnd: false,
             stripeCustomerId: (s.customer as string) ?? undefined,
             stripeSubscriptionId: (s.subscription as string) ?? undefined,
             currentPeriodStart: periodStart,
@@ -158,6 +162,12 @@ export async function POST(req: Request) {
           where: { stripeSubscriptionId: sub.id },
           data: {
             status: mapStripeStatus(sub.status),
+            // Con una baja programada, Stripe mantiene la suscripción en
+            // "active" hasta el último día pagado: el estado NO cambia y lo que
+            // hay que reflejar es esta bandera. También llega por aquí la baja
+            // cancelada desde el propio Stripe, de ahí que se copie el valor tal
+            // cual en vez de solo ponerla a true.
+            cancelAtPeriodEnd: sub.cancel_at_period_end === true,
             currentPeriodStart: toDate(sub.current_period_start) ?? undefined,
             currentPeriodEnd: toDate(sub.current_period_end) ?? undefined,
             ...(plan ? { plan } : {}),
@@ -166,12 +176,16 @@ export async function POST(req: Request) {
         break;
       }
 
-      // Cancelación definitiva.
+      // Cancelación consumada: llega cuando vence el periodo de una baja
+      // programada (o si se cancela en el acto desde el panel de Stripe). Es
+      // este evento, y no el botón de cancelar, el que corta el acceso.
       case "customer.subscription.deleted": {
         const sub = event.data.object as Stripe.Subscription;
         await prisma.subscription.updateMany({
           where: { stripeSubscriptionId: sub.id },
-          data: { status: "CANCELADA" },
+          // La baja ya no está "programada", está hecha: dejar la bandera a true
+          // haría que el panel siguiera ofreciendo un "reactivar" imposible.
+          data: { status: "CANCELADA", cancelAtPeriodEnd: false },
         });
         break;
       }

@@ -28,18 +28,86 @@ export async function PATCH(req: Request) {
     );
   }
 
-  if (action === "cancel") {
-    // En modo Stripe real, cancela también en Stripe
-    if (stripe && sub.stripeSubscriptionId) {
+  // Dar de baja y volver atrás son la misma operación con distinto valor, así
+  // que comparten camino: quien puede programar la baja tiene que poder
+  // deshacerla sin volver a pasar por caja.
+  if (action === "cancel" || action === "resume") {
+    const cancelar = action === "cancel";
+
+    // Basta con tener el cliente de Stripe: dar de baja no usa los price IDs, y
+    // exigir stripeConfigured (que sí los mira) dejaría a la gente sin poder
+    // cancelar por una variable de precio mal puesta — atrapada pagando.
+    if (stripe) {
+      if (!sub.stripeSubscriptionId) {
+        return NextResponse.json(
+          {
+            error:
+              "Tu suscripción no está vinculada a Stripe. Escríbenos y lo resolvemos.",
+          },
+          { status: 409 }
+        );
+      }
       try {
-        await stripe.subscriptions.cancel(sub.stripeSubscriptionId);
+        // Baja PROGRAMADA, no inmediata: el periodo en curso ya está pagado y
+        // tiene que seguir dando acceso hasta su último día. Cancelar en el acto
+        // (subscriptions.cancel) le quitaba al cliente el mes que había pagado.
+        const updated = await stripe.subscriptions.update(
+          sub.stripeSubscriptionId,
+          { cancel_at_period_end: cancelar }
+        );
+
+        await prisma.subscription.update({
+          where: { userId: session.user.id },
+          data: {
+            cancelAtPeriodEnd: cancelar,
+            // Refrescamos la fecha con la que manda Stripe: es hasta cuándo
+            // conserva el acceso, y es la que le enseñamos en el panel.
+            ...(updated.current_period_end
+              ? {
+                  currentPeriodEnd: new Date(updated.current_period_end * 1000),
+                }
+              : {}),
+          },
+        });
+        return NextResponse.json({ ok: true });
       } catch (err) {
-        console.error("stripe cancel error", err);
+        // Si Stripe no acepta el cambio, NO lo damos por bueno en nuestra BD.
+        // Marcarlo igualmente dejaba al cliente sin acceso mientras Stripe le
+        // seguía cobrando todos los meses: cobro sin servicio.
+        console.error(`stripe ${action} error`, err);
+        return NextResponse.json(
+          {
+            error: cancelar
+              ? "No hemos podido cancelar tu suscripción. No se ha cambiado nada: inténtalo de nuevo o escríbenos y lo hacemos nosotros."
+              : "No hemos podido reactivar tu suscripción. Inténtalo de nuevo en unos minutos.",
+          },
+          { status: 502 }
+        );
       }
     }
+
+    if (!demoMode) {
+      console.error(
+        "cancel/resume: falta STRIPE_SECRET_KEY en producción; nadie puede darse de baja desde el panel."
+      );
+      return NextResponse.json(
+        {
+          error:
+            "La gestión de tu plan no está disponible ahora mismo. Inténtalo más tarde.",
+        },
+        { status: 503 }
+      );
+    }
+
+    // Modo demo (solo fuera de producción). Sin periodo de facturación no hay
+    // nada pagado que respetar, así que la baja surte efecto ya.
     await prisma.subscription.update({
       where: { userId: session.user.id },
-      data: { status: "CANCELADA" },
+      data: {
+        cancelAtPeriodEnd: cancelar,
+        ...(cancelar && !sub.currentPeriodEnd ? { status: "CANCELADA" } : {}),
+        ...(!cancelar && sub.status === "CANCELADA" ? { status: "ACTIVA" } : {}),
+      },
     });
     return NextResponse.json({ ok: true });
   }

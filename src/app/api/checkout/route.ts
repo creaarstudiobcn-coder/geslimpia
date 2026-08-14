@@ -52,7 +52,9 @@ export async function POST(req: Request) {
       // Guardamos intención de suscripción como PENDIENTE
       await prisma.subscription.upsert({
         where: { userId: session.user.id },
-        update: { plan, status: "PENDIENTE" },
+        // cancelAtPeriodEnd a false: si esta fila viene de una baja anterior,
+        // arrastrar la bandera marcaría la suscripción nueva como "se cancela".
+        update: { plan, status: "PENDIENTE", cancelAtPeriodEnd: false },
         create: { userId: session.user.id, plan, status: "PENDIENTE" },
       });
 
@@ -88,6 +90,7 @@ export async function POST(req: Request) {
     update: {
       plan,
       status: "ACTIVA",
+      cancelAtPeriodEnd: false,
       currentPeriodStart: periodStart,
       currentPeriodEnd: periodEnd,
       contactsUsed: 0,

@@ -63,9 +63,17 @@ function LoginForm() {
         />
       </div>
       <div>
-        <label className="label" htmlFor="password">
-          Contraseña
-        </label>
+        <div className="flex items-baseline justify-between gap-3">
+          <label className="label" htmlFor="password">
+            Contraseña
+          </label>
+          <Link
+            href="/recuperar"
+            className="text-sm font-medium text-agua hover:underline"
+          >
+            ¿La has olvidado?
+          </Link>
+        </div>
         <input
           id="password"
           type="password"

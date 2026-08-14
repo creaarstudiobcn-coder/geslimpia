@@ -32,6 +32,11 @@ model User {
   // vigente. null = alta anterior a que se recogiera; no se rellena a posteriori.
   consentAt      DateTime?
   consentVersion String?
+  // Cuándo se cambió la contraseña por última vez. Las sesiones son JWT de 30
+  // días que no consultan la BD, así que sin esta marca restablecer la
+  // contraseña no echaba a quien ya estuviera dentro — justo el caso para el que
+  // sirve restablecerla. Los tokens emitidos antes de esta fecha dejan de valer.
+  passwordChangedAt DateTime?
   createdAt    DateTime @default(now())
 
   cleanerProfile CleanerProfile?
@@ -50,6 +55,30 @@ model User {
 
   supportMessages SupportMessage[] @relation("SupportThread")
   adminLogs       AdminLog[]       @relation("AdminActor")
+
+  passwordResetTokens PasswordResetToken[]
+}
+
+// Enlace de "he olvidado mi contraseña". Sin esto, perder la contraseña dejaba
+// fuera de su propia suscripción a quien la paga, sin más salida que escribirnos.
+model PasswordResetToken {
+  id String @id @default(cuid())
+  // Guardamos el SHA-256 del token, nunca el token en claro: quien pueda leer
+  // esta tabla (una copia de seguridad, un volcado) no debe poder entrar con los
+  // enlaces que estén pendientes. El token solo existe en el email del usuario.
+  tokenHash String @unique
+  userId    String
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Caducidad corta: un enlace que abre una cuenta no puede vivir en la bandeja
+  // de entrada para siempre.
+  expiresAt DateTime
+  // Marca de un solo uso. No borramos la fila al usarla para que un segundo
+  // clic sobre el mismo enlace dé un error claro en vez de "token inválido".
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 model CleanerProfile {
@@ -79,6 +108,10 @@ model Subscription {
   // Cupo de contactos consumido en el periodo en curso. Es un espejo para
   // mostrar en paneles: el valor que manda lo calcula lib/suscripcion.ts.
   contactsUsed         Int       @default(0)
+  // Baja programada: el cliente ha cancelado, pero el periodo que YA ha pagado
+  // sigue dando acceso hasta currentPeriodEnd y no se renovará. Es el espejo de
+  // cancel_at_period_end en Stripe; mientras es true, status sigue siendo ACTIVA.
+  cancelAtPeriodEnd    Boolean   @default(false)
   stripeCustomerId     String?
   stripeSubscriptionId String?
   // Periodo de facturación en curso, tal cual lo reporta Stripe. El inicio

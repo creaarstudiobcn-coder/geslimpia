@@ -42,6 +42,7 @@ export default async function PlanPage() {
           contactsUsed={usage.usados}
           limit={usage.limite}
           periodEnd={sub.currentPeriodEnd?.toISOString() ?? null}
+          cancelAtPeriodEnd={sub.cancelAtPeriodEnd}
         />
       )}
     </>

@@ -9,7 +9,17 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/api/", "/dashboard/", "/onboarding/", "/suscripcion/", "/login"],
+      // /restablecer lleva un token personal en la URL y /recuperar es un
+      // formulario de servicio: ninguno de los dos aporta nada en Google.
+      disallow: [
+        "/api/",
+        "/dashboard/",
+        "/onboarding/",
+        "/suscripcion/",
+        "/login",
+        "/recuperar",
+        "/restablecer",
+      ],
     },
     sitemap: absoluteUrl("/sitemap.xml"),
     host: SITE_URL,
