@@ -16,9 +16,15 @@ export const metadata: Metadata = {
   title: "GesLimpia — Encuentra limpiadora de confianza en el Maresme",
   description:
     "Plataforma de conexión entre hogares y limpiadoras profesionales independientes en Mataró y el Maresme. Tú eliges, contactas y acuerdas directamente.",
+  /* El respaldo era "http://localhost:3000". Con una canónica declarada eso
+     publicaría <link rel="canonical" href="http://localhost:3000/"> en cuanto
+     faltara la variable en el entorno, que es peor que no tener canónica. */
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
+    process.env.NEXT_PUBLIC_APP_URL ?? "https://www.geslimpia.es"
   ),
+  // metadataBase por sí solo NO emite <link rel="canonical">: hace falta
+  // declararla. Sin ella el ápex y el www compiten por la misma página.
+  alternates: { canonical: "/" },
   applicationName: "GesLimpia",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
