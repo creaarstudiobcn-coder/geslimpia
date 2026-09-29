@@ -15,7 +15,7 @@ import {
   introLimpiadora,
   faqsLimpiadora,
 } from "@/lib/zonas";
-import { SITE_URL, absoluteUrl } from "@/lib/site";
+import { SITE_URL, absoluteUrl, OG_IMAGES } from "@/lib/site";
 
 export const dynamicParams = false;
 
@@ -43,6 +43,7 @@ export function generateMetadata({
       type: "website",
       url: absoluteUrl(path),
       siteName: "GesLimpia",
+      images: OG_IMAGES,
     },
   };
 }

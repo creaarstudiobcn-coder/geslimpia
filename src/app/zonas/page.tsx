@@ -4,7 +4,7 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { Breadcrumbs, JsonLd } from "@/components/zonas/parts";
 import { municipiosPorComarca, MUNICIPIOS } from "@/lib/zonas";
-import { SITE_URL, absoluteUrl } from "@/lib/site";
+import { SITE_URL, absoluteUrl, OG_IMAGES } from "@/lib/site";
 
 const title = "Zonas: limpiadoras y trabajo de limpieza en la provincia de Barcelona | GesLimpia";
 const description =
@@ -20,6 +20,7 @@ export const metadata: Metadata = {
     type: "website",
     url: absoluteUrl("/zonas"),
     siteName: "GesLimpia",
+    images: OG_IMAGES,
   },
 };
 
