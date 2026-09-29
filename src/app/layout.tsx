@@ -45,6 +45,15 @@ export const metadata: Metadata = {
     description:
       "Plataforma de conexión entre hogares y limpiadoras profesionales independientes.",
     type: "website",
+    // Vista previa al compartir el enlace (WhatsApp, redes). 1200×630.
+    images: [
+      {
+        url: "/og-portada.jpg",
+        width: 1200,
+        height: 630,
+        alt: "GesLimpia — Encuentra limpiadora de confianza cerca de ti",
+      },
+    ],
   },
 };
 
