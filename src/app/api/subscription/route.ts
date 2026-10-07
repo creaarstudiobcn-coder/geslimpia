@@ -8,6 +8,8 @@ import {
   priceIdForPlan,
 } from "@/lib/stripe";
 import type { PlanId } from "@/lib/constants";
+import { appBaseUrl } from "@/lib/site";
+import { urlPortalCliente } from "@/lib/suscripcionStripe";
 
 // Gestionar la suscripción del hogar: cambiar de plan o cancelar.
 export async function PATCH(req: Request) {
@@ -110,6 +112,41 @@ export async function PATCH(req: Request) {
       },
     });
     return NextResponse.json({ ok: true });
+  }
+
+  // Portal de cliente de Stripe: lo usa el hogar con un pago fallido para
+  // actualizar la tarjeta y pagar la factura pendiente. Al pagarse, el webhook
+  // (invoice.payment_succeeded) devuelve la suscripción a ACTIVA.
+  if (action === "portal") {
+    if (!stripe) {
+      return NextResponse.json(
+        {
+          error: demoMode
+            ? "En modo demo no hay portal de pago: vuelve a suscribirte desde «Ver planes»."
+            : "La gestión del pago no está disponible ahora mismo. Inténtalo más tarde.",
+        },
+        { status: demoMode ? 409 : 503 }
+      );
+    }
+    try {
+      const url = await urlPortalCliente(sub, `${appBaseUrl()}/dashboard/plan`);
+      if (!url) {
+        return NextResponse.json(
+          {
+            error:
+              "Tu suscripción no está vinculada a Stripe. Escríbenos y lo resolvemos.",
+          },
+          { status: 409 }
+        );
+      }
+      return NextResponse.json({ url });
+    } catch (err) {
+      console.error("stripe portal error", err);
+      return NextResponse.json(
+        { error: "No se pudo abrir la gestión del pago. Inténtalo más tarde." },
+        { status: 502 }
+      );
+    }
   }
 
   if (action === "changePlan") {

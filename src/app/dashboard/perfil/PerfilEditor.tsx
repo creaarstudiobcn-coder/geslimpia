@@ -48,26 +48,38 @@ export default function PerfilEditor({
       setError("Selecciona al menos un servicio y una zona.");
       return;
     }
-    setLoading(true);
-    const res = await fetch("/api/cleaner/profile", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        bio,
-        hourlyRate: Number(hourlyRate),
-        availability,
-        services,
-        zones,
-        disponibleHoy,
-      }),
-    });
-    setLoading(false);
-    if (!res.ok) {
-      setError("No se pudo guardar.");
+    const tarifa = Number(hourlyRate);
+    if (!Number.isFinite(tarifa) || tarifa <= 0) {
+      setError("Indica tu tarifa por hora (mayor que 0 €).");
       return;
     }
-    setSaved(true);
-    router.refresh();
+    setLoading(true);
+    // try/finally: si la red falla, el botón no se queda en "Guardando…".
+    try {
+      const res = await fetch("/api/cleaner/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bio,
+          hourlyRate: tarifa,
+          availability,
+          services,
+          zones,
+          disponibleHoy,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? "No se pudo guardar.");
+        return;
+      }
+      setSaved(true);
+      router.refresh();
+    } catch {
+      setError("No se pudo conectar. Revisa tu conexión e inténtalo de nuevo.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -104,8 +116,9 @@ export default function PerfilEditor({
             <input
               id="hourlyRate"
               type="number"
-              min={0}
+              min={0.5}
               step="0.5"
+              required
               className="input max-w-[140px]"
               value={hourlyRate}
               onChange={(e) => setHourlyRate(e.target.value)}

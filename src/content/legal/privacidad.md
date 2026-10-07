@@ -10,7 +10,7 @@ Esta Política describe cómo **Dependalium Global Services, S.L.** trata los da
 
 - **Responsable:** Dependalium Global Services, S.L.
 - **NIF:** B26786962
-- **Domicilio:** Bailèn de les Espenyes, 6, 1.º, 08301 Mataró (Barcelona), España.
+- **Domicilio:** Baixada de les Espenyes, 6, 1.º, 08301 Mataró (Barcelona), España.
 - **Email:** info@dependalium.com
 - **Delegado de Protección de Datos (DPD):** no se ha designado un DPD. Para cualquier cuestión relativa a la protección de tus datos puedes dirigirte a info@dependalium.com.
 
@@ -57,10 +57,12 @@ La Empresa suscribe con sus proveedores los **contratos de encargo del tratamien
 
 - **Alojamiento e infraestructura:** Vercel y Neon.
 - **Pasarela de pago:** Stripe.
+- **Envío de correos de la plataforma** (avisos de solicitudes, recuperación de contraseña): Resend.
+- **Protección contra registros automáticos y abuso** en el registro, el inicio de sesión y la recuperación de contraseña: Google reCAPTCHA (Google Ireland Ltd.), que analiza datos técnicos del navegador y del dispositivo.
 
 ## 7. Transferencias internacionales
 
-Algunos de nuestros proveedores (en particular, la pasarela de pago y la infraestructura de alojamiento) pueden tratar datos **fuera del Espacio Económico Europeo (EEE)**, por ejemplo en Estados Unidos. En tales casos, las transferencias se realizan con las **garantías adecuadas** previstas en el RGPD (cláusulas contractuales tipo de la Comisión Europea o decisiones de adecuación aplicables).
+Algunos de nuestros proveedores (en particular, la pasarela de pago, la infraestructura de alojamiento, el envío de correos y Google reCAPTCHA) pueden tratar datos **fuera del Espacio Económico Europeo (EEE)**, por ejemplo en Estados Unidos. En tales casos, las transferencias se realizan con las **garantías adecuadas** previstas en el RGPD (cláusulas contractuales tipo de la Comisión Europea o decisiones de adecuación aplicables).
 
 ## 8. Derechos de las personas interesadas
 
@@ -95,4 +97,4 @@ Podremos actualizar esta Política. Publicaremos la versión vigente con su fech
 
 ---
 
-**Responsable:** Dependalium Global Services, S.L. · NIF B26786962 · Bailèn de les Espenyes, 6, 1.º, 08301 Mataró (Barcelona) · info@dependalium.com
+**Responsable:** Dependalium Global Services, S.L. · NIF B26786962 · Baixada de les Espenyes, 6, 1.º, 08301 Mataró (Barcelona) · info@dependalium.com

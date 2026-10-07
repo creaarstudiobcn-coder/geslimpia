@@ -2,15 +2,18 @@ import Stripe from "stripe";
 
 const key = process.env.STRIPE_SECRET_KEY;
 
-// Cliente Stripe. Si no hay clave configurada (entorno de demo sin Stripe),
-// exportamos null y el flujo de suscripción usa el modo simulado.
-export const stripe = key
-  ? new Stripe(key, { apiVersion: "2024-06-20" })
-  : null;
-
 function isSet(value: string | undefined): boolean {
   return !!value && !value.includes("placeholder");
 }
+
+// Cliente Stripe. Si no hay clave configurada (entorno de demo sin Stripe),
+// exportamos null y el flujo de suscripción usa el modo simulado.
+// Una clave de relleno (sk_test_placeholder del .env de ejemplo) cuenta como
+// "sin clave": antes creaba un cliente que fallaba en cada llamada, y en la demo
+// cancelar el plan o abrir el portal daba error en vez de usar el modo simulado.
+export const stripe = isSet(key)
+  ? new Stripe(key as string, { apiVersion: "2024-06-20" })
+  : null;
 
 export const stripeConfigured =
   isSet(key) &&

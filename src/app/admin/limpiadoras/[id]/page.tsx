@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { parseList, servicioLabel } from "@/lib/constants";
+import { parseList, servicioLabel, eur } from "@/lib/constants";
 import { AdminHeader, Badge } from "@/components/admin/AdminUi";
 import UserActions from "@/components/admin/UserActions";
 import ReviewActions from "@/components/admin/ReviewActions";
-import { Avatar } from "@/components/ui";
+import { Avatar, formatNota } from "@/components/ui";
+import { fechaCorta } from "@/lib/fechas";
+
+export const metadata = { title: "Ficha de limpiadora · Admin · GesLimpia" };
 
 export default async function AdminLimpiadoraDetalle({
   params,
@@ -46,12 +49,12 @@ export default async function AdminLimpiadoraDetalle({
         {p?.verified && <Badge tone="blue">✓ Verificada</Badge>}
         {user.active ? <Badge tone="green">Activa</Badge> : <Badge tone="red">Desactivada</Badge>}
         <span className="text-xs text-slate-400">
-          Alta: {user.createdAt.toLocaleDateString("es-ES")}
+          Alta: {fechaCorta(user.createdAt)}
         </span>
         {user.consentAt ? (
           <span className="text-xs text-slate-400">
             · Acepta los textos legales v{user.consentVersion} el{" "}
-            {user.consentAt.toLocaleDateString("es-ES")}
+            {fechaCorta(user.consentAt)}
           </span>
         ) : (
           <span className="text-xs text-amber-600">
@@ -84,11 +87,11 @@ export default async function AdminLimpiadoraDetalle({
           <h2 className="mb-3 text-sm font-semibold text-petroleo">Perfil</h2>
           <dl className="space-y-2 text-sm">
             <Row label="Ciudad" value={user.ciudad ?? "—"} />
-            <Row label="Tarifa" value={`${p?.hourlyRate ?? "—"} €/h`} />
+            <Row label="Tarifa" value={p ? `${eur(p.hourlyRate)}/h` : "—"} />
             <Row label="Disponibilidad" value={p?.availability || "—"} />
             <Row
               label="Valoración"
-              value={`${p?.ratingAvg?.toFixed(1) ?? "0.0"} ★ (${p?.ratingCount ?? 0})`}
+              value={`${formatNota(p?.ratingAvg ?? 0)} ★ (${p?.ratingCount ?? 0})`}
             />
             <Row label="Onboarding" value={p?.onboarded ? "Completado" : "Pendiente"} />
           </dl>

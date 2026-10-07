@@ -10,7 +10,12 @@ import CleanerRequests from "./CleanerRequests";
 export default async function DashboardHome({
   searchParams,
 }: {
-  searchParams: { zona?: string; servicio?: string; disponible?: string };
+  searchParams: {
+    zona?: string;
+    servicio?: string;
+    disponible?: string;
+    limpiadora?: string;
+  };
 }) {
   const user = await getCurrentUser();
   if (!user) return null;
@@ -63,6 +68,30 @@ export default async function DashboardHome({
   const activa = subscriptionIsActive(sub);
 
   if (!activa) {
+    // Pago fallido de una suscripción que sigue abierta en Stripe: hay que
+    // arreglar la tarjeta en "Mi plan", no suscribirse otra vez.
+    const pagoPendiente =
+      sub?.status === "PENDIENTE" && !!sub.stripeSubscriptionId;
+    if (pagoPendiente) {
+      return (
+        <>
+          <PageTitle title="Buscar limpiadoras" />
+          <div className="card mx-auto max-w-xl p-8 text-center">
+            <span className="text-4xl">⚠️</span>
+            <h2 className="mt-4 text-xl font-bold text-petroleo">
+              Tu último pago no se ha podido cobrar
+            </h2>
+            <p className="mt-2 text-slate-600">
+              Actualiza tu tarjeta y recuperarás el acceso al momento, sin volver
+              a suscribirte.
+            </p>
+            <Link href="/dashboard/plan" className="btn-primary mt-6">
+              Ir a mi plan
+            </Link>
+          </div>
+        </>
+      );
+    }
     return (
       <>
         <PageTitle title="Buscar limpiadoras" />
@@ -143,6 +172,7 @@ export default async function DashboardHome({
       <CleanerSearch
         cleaners={list}
         filters={{ zona: zona ?? "", servicio: servicio ?? "", disponible: soloDisponibles }}
+        abrirLimpiadora={searchParams.limpiadora}
         contactInfo={{
           used: usage.usados,
           limit: usage.limite,

@@ -8,7 +8,6 @@ type Initial = {
   bio: string;
   hourlyRate: number;
   availability: string;
-  photoUrl: string;
   services: string[];
   zones: string[];
 };
@@ -18,7 +17,6 @@ export default function OnboardingForm({ initial }: { initial: Initial }) {
   const [bio, setBio] = useState(initial.bio);
   const [hourlyRate, setHourlyRate] = useState(String(initial.hourlyRate));
   const [availability, setAvailability] = useState(initial.availability);
-  const [photoUrl, setPhotoUrl] = useState(initial.photoUrl);
   const [services, setServices] = useState<string[]>(initial.services);
   const [zones, setZones] = useState<string[]>(initial.zones);
   const [loading, setLoading] = useState(false);
@@ -41,44 +39,45 @@ export default function OnboardingForm({ initial }: { initial: Initial }) {
       setError("Selecciona al menos una zona donde trabajas.");
       return;
     }
-    setLoading(true);
-    const res = await fetch("/api/cleaner/profile", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        bio,
-        hourlyRate: Number(hourlyRate),
-        availability,
-        photoUrl,
-        services,
-        zones,
-      }),
-    });
-    setLoading(false);
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      setError(data.error ?? "No se pudo guardar.");
+    const tarifa = Number(hourlyRate);
+    if (!Number.isFinite(tarifa) || tarifa <= 0) {
+      setError("Indica tu tarifa por hora (mayor que 0 €).");
       return;
     }
-    router.push("/dashboard");
-    router.refresh();
+    setLoading(true);
+    try {
+      // Sin disponibleHoy a propósito: repetir el onboarding no debe tocar el
+      // interruptor "Disponible hoy" que la limpiadora gestiona en su perfil.
+      const res = await fetch("/api/cleaner/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bio,
+          hourlyRate: tarifa,
+          availability,
+          services,
+          zones,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? "No se pudo guardar.");
+        return;
+      }
+      router.push("/dashboard");
+      router.refresh();
+    } catch {
+      setError("No se pudo conectar. Revisa tu conexión e inténtalo de nuevo.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <form onSubmit={onSubmit} className="space-y-5">
-      <div>
-        <label className="label" htmlFor="photoUrl">
-          Foto (URL, opcional)
-        </label>
-        <input
-          id="photoUrl"
-          className="input"
-          value={photoUrl}
-          onChange={(e) => setPhotoUrl(e.target.value)}
-          placeholder="https://… (deja vacío para usar tu inicial)"
-        />
-      </div>
-
+      {/* La foto se sube después desde "Mi perfil" (PhotoUploader). Aquí había
+          un campo de URL que la API ignoraba: la limpiadora la escribía y no se
+          guardaba nunca. */}
       <div>
         <label className="label" htmlFor="bio">
           Descripción
@@ -101,8 +100,9 @@ export default function OnboardingForm({ initial }: { initial: Initial }) {
           <input
             id="hourlyRate"
             type="number"
-            min={0}
+            min={0.5}
             step="0.5"
+            required
             className="input max-w-[140px]"
             value={hourlyRate}
             onChange={(e) => setHourlyRate(e.target.value)}

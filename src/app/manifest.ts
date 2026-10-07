@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "GesLimpia",
     short_name: "GesLimpia",
     description:
-      "Conecta con limpiadoras profesionales independientes en Mataró y el Maresme.",
+      "Conecta con limpiadoras profesionales independientes en la provincia de Barcelona.",
     start_url: "/",
     scope: "/",
     display: "standalone",

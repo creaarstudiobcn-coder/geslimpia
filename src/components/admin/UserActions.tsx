@@ -8,6 +8,9 @@ type Props = {
   isCleaner: boolean;
   active: boolean;
   verified?: boolean;
+  // Tiene una suscripción vinculada a Stripe que se cancelará al desactivar o
+  // eliminar la cuenta (solo hogares).
+  hasStripeSubscription?: boolean;
   // A dónde volver tras eliminar (listado correspondiente).
   deleteRedirect: string;
 };
@@ -19,13 +22,25 @@ export default function UserActions({
   isCleaner,
   active,
   verified,
+  hasStripeSubscription = false,
   deleteRedirect,
 }: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
 
+  const avisoStripe = hasStripeSubscription
+    ? " Su suscripción en Stripe se cancelará en el acto y no se le volverá a cobrar (no hay reembolso automático del mes en curso)."
+    : "";
+
   async function patch(action: string) {
+    if (
+      action === "deactivate" &&
+      hasStripeSubscription &&
+      !window.confirm(`¿Desactivar esta cuenta?${avisoStripe}`)
+    ) {
+      return;
+    }
     setBusy(action);
     setError("");
     const res = await fetch(`/api/admin/users/${userId}`, {
@@ -44,7 +59,7 @@ export default function UserActions({
 
   async function remove() {
     const ok = window.confirm(
-      "¿Eliminar definitivamente esta cuenta? Se borrarán su perfil, reservas y mensajes. Esta acción no se puede deshacer."
+      `¿Eliminar definitivamente esta cuenta? Se borrarán su perfil, reservas y mensajes.${avisoStripe} Esta acción no se puede deshacer.`
     );
     if (!ok) return;
     setBusy("delete");

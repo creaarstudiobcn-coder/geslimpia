@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { parseList } from "@/lib/constants";
+import { parseList, eur } from "@/lib/constants";
 import { AdminHeader, Badge } from "@/components/admin/AdminUi";
+
+export const metadata = { title: "Limpiadoras · Admin · GesLimpia" };
 
 export default async function AdminLimpiadoras({
   searchParams,
@@ -90,11 +92,11 @@ export default async function AdminLimpiadoras({
               href={`/admin/limpiadoras/${c.id}`}
               className="flex flex-wrap items-center justify-between gap-2 p-4 hover:bg-espuma/50"
             >
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="truncate font-medium text-petroleo">{c.name}</p>
                 <p className="truncate text-xs text-slate-400">
                   {c.email} · {c.ciudad ?? "—"} ·{" "}
-                  {c.cleanerProfile?.hourlyRate ?? "—"} €/h
+                  {c.cleanerProfile ? `${eur(c.cleanerProfile.hourlyRate)}/h` : "sin perfil"}
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-2">

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { StatusBadge, EmptyState } from "@/components/ui";
+import { fechaHora } from "@/lib/fechas";
 
 type Booking = {
   id: string;
@@ -76,10 +77,7 @@ export default function CleanerRequests({
           <div className="mt-3 flex flex-wrap gap-4 text-sm text-slate-600">
             <span>
               📅{" "}
-              {new Date(b.date).toLocaleString("es-ES", {
-                dateStyle: "medium",
-                timeStyle: "short",
-              })}
+              {fechaHora(b.date)}
             </span>
             <span>⏱️ {b.hours} h estimadas</span>
           </div>

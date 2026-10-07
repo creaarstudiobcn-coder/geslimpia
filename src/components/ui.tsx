@@ -1,3 +1,12 @@
+// Nota media con coma decimal ("4,8"), como se escribe en castellano.
+// toFixed(1) daba "4.8".
+export function formatNota(value: number): string {
+  return value.toLocaleString("es-ES", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
+}
+
 export function RatingStars({
   value,
   count,
@@ -13,7 +22,7 @@ export function RatingStars({
         <span className="text-slate-300">{"★".repeat(5 - full)}</span>
       </span>
       <span className="text-slate-500">
-        {value > 0 ? value.toFixed(1) : "Nueva"}
+        {value > 0 ? formatNota(value) : "Nueva"}
         {typeof count === "number" && count > 0 ? ` (${count})` : ""}
       </span>
     </span>
@@ -30,8 +39,8 @@ export function Avatar({
   size?: number;
 }) {
   if (src) {
-    // eslint-disable-next-line @next/next/no-img-element
     return (
+      // eslint-disable-next-line @next/next/no-img-element
       <img
         src={src}
         alt={name}
@@ -58,6 +67,7 @@ const STATUS_STYLES: Record<string, string> = {
   ACEPTADA: "bg-menta/20 text-[#1f8a76]",
   RECHAZADA: "bg-red-100 text-red-600",
   COMPLETADA: "bg-slate-200 text-slate-600",
+  CANCELADA: "bg-slate-100 text-slate-500",
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -65,6 +75,7 @@ const STATUS_LABEL: Record<string, string> = {
   ACEPTADA: "Aceptada",
   RECHAZADA: "Rechazada",
   COMPLETADA: "Completada",
+  CANCELADA: "Cancelada",
 };
 
 export function StatusBadge({ status }: { status: string }) {

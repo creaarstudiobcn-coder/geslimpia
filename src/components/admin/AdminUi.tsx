@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { PLANES, type PlanId } from "@/lib/constants";
+import { subscriptionIsActive, type SubscriptionLike } from "@/lib/suscripcion";
 
 // Badge de estado genérico (activa/desactivada, verificada, plan, etc.).
 export function Badge({
@@ -69,6 +71,45 @@ export function AdminHeader({
   );
 }
 
+// Textos legibles para el panel: antes salían los valores internos tal cual
+// ("PENDIENTE", "BASICO", "LIMPIADORA", o "null" en cuentas sin rol).
+const STATUS_LABEL: Record<string, string> = {
+  ACTIVA: "Activa",
+  PENDIENTE: "Pendiente",
+  CANCELADA: "Cancelada",
+  CADUCADA: "Caducada",
+  ACEPTADA: "Aceptada",
+  RECHAZADA: "Rechazada",
+  COMPLETADA: "Completada",
+};
+
+export function statusLabel(status: string): string {
+  return STATUS_LABEL[status] ?? status;
+}
+
+// Estado de una suscripción tal como cuenta para el acceso: una fila ACTIVA con
+// el periodo vencido (webhook perdido) no da acceso, y el panel tiene que
+// enseñarla como "Caducada" y no como "Activa".
+export function estadoSuscripcion(sub: SubscriptionLike): string {
+  if (sub.status === "ACTIVA" && !subscriptionIsActive(sub)) return "CADUCADA";
+  return sub.status;
+}
+
+export function planLabel(plan: string): string {
+  return PLANES[plan as PlanId]?.nombre ?? plan;
+}
+
+const ROLE_LABEL: Record<string, string> = {
+  HOGAR: "Hogar",
+  LIMPIADORA: "Limpiadora",
+  ADMIN: "Admin",
+};
+
+export function roleLabel(role: string | null | undefined): string {
+  if (!role) return "Sin rol";
+  return ROLE_LABEL[role] ?? role;
+}
+
 // Traduce el estado de una suscripción/reserva a un Badge con color.
 export function statusTone(
   status: string
@@ -82,6 +123,7 @@ export function statusTone(
     case "RECHAZADA":
       return "red";
     case "PENDIENTE":
+    case "CADUCADA":
       return "amber";
     default:
       return "slate";

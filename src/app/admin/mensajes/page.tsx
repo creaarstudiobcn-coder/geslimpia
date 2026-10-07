@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { AdminHeader, Badge } from "@/components/admin/AdminUi";
+import { AdminHeader, Badge, roleLabel } from "@/components/admin/AdminUi";
+import { fechaCorta } from "@/lib/fechas";
+
+export const metadata = { title: "Mensajes · Admin · GesLimpia" };
 
 export default async function AdminMensajes({
   searchParams,
@@ -82,11 +85,11 @@ export default async function AdminMensajes({
                   href={`/admin/mensajes/${u.id}`}
                   className="flex items-center justify-between gap-2 p-4 hover:bg-espuma/50"
                 >
-                  <div>
-                    <p className="font-medium text-petroleo">{u.name}</p>
-                    <p className="text-xs text-slate-400">{u.email}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium text-petroleo">{u.name}</p>
+                    <p className="truncate text-xs text-slate-400">{u.email}</p>
                   </div>
-                  <Badge tone="slate">{u.role}</Badge>
+                  <Badge tone="slate">{roleLabel(u.role)}</Badge>
                 </Link>
               ))}
             </div>
@@ -109,18 +112,18 @@ export default async function AdminMensajes({
                 href={`/admin/mensajes/${t.user.id}`}
                 className="flex items-center justify-between gap-3 p-4 hover:bg-espuma/50"
               >
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="truncate font-medium text-petroleo">
                     {t.user.name}{" "}
                     <span className="text-xs font-normal text-slate-400">
-                      {t.user.role}
+                      {roleLabel(t.user.role)}
                     </span>
                   </p>
                   <p className="truncate text-xs text-slate-400">{t.last}</p>
                 </div>
                 <div className="flex shrink-0 flex-col items-end gap-1">
                   <span className="text-[10px] text-slate-400">
-                    {t.lastAt.toLocaleDateString("es-ES")}
+                    {fechaCorta(t.lastAt)}
                   </span>
                   {t.unread > 0 && <Badge tone="blue">{t.unread} nuevo(s)</Badge>}
                 </div>

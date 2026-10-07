@@ -1,8 +1,18 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { AdminHeader, Badge, statusTone } from "@/components/admin/AdminUi";
+import {
+  AdminHeader,
+  Badge,
+  estadoSuscripcion,
+  planLabel,
+  statusLabel,
+  statusTone,
+} from "@/components/admin/AdminUi";
 import UserActions from "@/components/admin/UserActions";
+import { fechaCorta } from "@/lib/fechas";
+
+export const metadata = { title: "Ficha de hogar · Admin · GesLimpia" };
 
 export default async function AdminHogarDetalle({
   params,
@@ -34,14 +44,14 @@ export default async function AdminHogarDetalle({
       <div className="mb-5 flex flex-wrap items-center gap-2">
         {user.active ? <Badge tone="green">Activo</Badge> : <Badge tone="red">Desactivado</Badge>}
         <span className="text-xs text-slate-400">
-          Alta: {user.createdAt.toLocaleDateString("es-ES")} · {user.ciudad ?? "—"}
+          Alta: {fechaCorta(user.createdAt)} · {user.ciudad ?? "—"}
         </span>
         {/* Prueba del consentimiento: el RGPD obliga a poder demostrarlo, así
             que tiene que ser consultable, no solo estar en la BD. */}
         {user.consentAt ? (
           <span className="text-xs text-slate-400">
             · Acepta los textos legales v{user.consentVersion} el{" "}
-            {user.consentAt.toLocaleDateString("es-ES")}
+            {fechaCorta(user.consentAt)}
           </span>
         ) : (
           <span className="text-xs text-amber-600">
@@ -57,6 +67,9 @@ export default async function AdminHogarDetalle({
           userId={user.id}
           isCleaner={false}
           active={user.active}
+          hasStripeSubscription={
+            !!sub?.stripeSubscriptionId && sub.status !== "CANCELADA"
+          }
           deleteRedirect="/admin/hogares"
         />
         <Link
@@ -74,21 +87,28 @@ export default async function AdminHogarDetalle({
             <dl className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <dt className="text-slate-500">Plan</dt>
-                <dd className="font-medium text-petroleo">{sub.plan}</dd>
+                <dd className="font-medium text-petroleo">{planLabel(sub.plan)}</dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-slate-500">Estado</dt>
-                <dd><Badge tone={statusTone(sub.status)}>{sub.status}</Badge></dd>
+                <dd>
+                  <Badge tone={statusTone(estadoSuscripcion(sub))}>
+                    {statusLabel(estadoSuscripcion(sub))}
+                  </Badge>
+                </dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-slate-500">Contactos usados</dt>
                 <dd className="font-medium text-petroleo">{sub.contactsUsed}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-slate-500">Renovación</dt>
+                {/* Con baja programada no hay renovación: es el último día. */}
+                <dt className="text-slate-500">
+                  {sub.cancelAtPeriodEnd ? "Fin (baja programada)" : "Renovación"}
+                </dt>
                 <dd className="font-medium text-petroleo">
-                  {sub.currentPeriodEnd
-                    ? sub.currentPeriodEnd.toLocaleDateString("es-ES")
+                  {sub.currentPeriodEnd && sub.status !== "CANCELADA"
+                    ? fechaCorta(sub.currentPeriodEnd)
                     : "—"}
                 </dd>
               </div>
@@ -119,10 +139,10 @@ export default async function AdminHogarDetalle({
                   <span className="text-petroleo">
                     {b.cleanerUser.name}
                     <span className="ml-2 text-xs text-slate-400">
-                      {b.date.toLocaleDateString("es-ES")}
+                      {fechaCorta(b.date)}
                     </span>
                   </span>
-                  <Badge tone={statusTone(b.status)}>{b.status}</Badge>
+                  <Badge tone={statusTone(b.status)}>{statusLabel(b.status)}</Badge>
                 </li>
               ))}
             </ul>

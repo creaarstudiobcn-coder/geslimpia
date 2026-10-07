@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { StatusBadge } from "@/components/ui";
 import { eur } from "@/lib/constants";
+import { fechaHora } from "@/lib/fechas";
 import ChatThread from "./ChatThread";
 
 export const metadata = { title: "Chat · GesLimpia" };
@@ -52,10 +53,7 @@ export default async function ChatPage({
             <p className="font-semibold text-petroleo">{otherName}</p>
             <p className="text-xs text-slate-500">
               📅{" "}
-              {new Date(booking.date).toLocaleString("es-ES", {
-                dateStyle: "medium",
-                timeStyle: "short",
-              })}{" "}
+              {fechaHora(booking.date)}{" "}
               · {booking.hours} h
               {isHome && rate > 0 ? ` · ${eur(rate)}/h` : ""}
             </p>

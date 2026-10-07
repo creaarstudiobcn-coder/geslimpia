@@ -1,7 +1,11 @@
 import Link from "next/link";
 import Logo from "@/components/Logo";
 
-export const metadata = { title: "Página no encontrada · GesLimpia" };
+export const metadata = {
+  title: "Página no encontrada · GesLimpia",
+  // Sin esto hereda la canónica "./" del layout y apunta a /_not-found.
+  alternates: { canonical: null },
+};
 
 export default function NotFound() {
   return (

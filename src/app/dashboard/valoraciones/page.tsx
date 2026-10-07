@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import { PageTitle, EmptyState, RatingStars, Avatar } from "@/components/ui";
+import { PageTitle, EmptyState, RatingStars, Avatar, formatNota } from "@/components/ui";
+import { fechaCorta } from "@/lib/fechas";
 
 export const metadata = { title: "Valoraciones · GesLimpia" };
 
@@ -28,7 +29,7 @@ export default async function ValoracionesPage() {
 
       <div className="card mb-6 flex items-center gap-4 p-6">
         <div className="text-4xl font-bold text-petroleo">
-          {avg > 0 ? avg.toFixed(1) : "—"}
+          {avg > 0 ? formatNota(avg) : "—"}
         </div>
         <div>
           <RatingStars value={avg} count={count} />
@@ -57,7 +58,7 @@ export default async function ValoracionesPage() {
                   <RatingStars value={r.rating} />
                 </div>
                 <span className="ml-auto text-xs text-slate-400">
-                  {new Date(r.createdAt).toLocaleDateString("es-ES")}
+                  {fechaCorta(r.createdAt)}
                 </span>
               </div>
               {r.comment && (

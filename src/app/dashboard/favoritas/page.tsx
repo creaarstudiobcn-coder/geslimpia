@@ -8,6 +8,7 @@ import {
   servicioLabel,
   eur,
 } from "@/lib/constants";
+import FavoriteActions from "./FavoriteActions";
 
 export const metadata = { title: "Favoritas · GesLimpia" };
 
@@ -17,7 +18,16 @@ export default async function FavoritasPage() {
   if (user.role !== "HOGAR") redirect("/dashboard");
 
   const favorites = await prisma.favorite.findMany({
-    where: { homeUserId: user.id },
+    // Solo las que se pueden contactar: cuenta activa y perfil publicado (las
+    // mismas que salen en la búsqueda). Una desactivada por el admin no puede
+    // seguir apareciendo como opción.
+    where: {
+      homeUserId: user.id,
+      cleanerUser: {
+        active: true,
+        cleanerProfile: { is: { onboarded: true } },
+      },
+    },
     orderBy: { createdAt: "desc" },
     include: {
       cleanerUser: {
@@ -73,6 +83,10 @@ export default async function FavoritasPage() {
                     {eur(p?.hourlyRate ?? 0)}/h
                   </span>
                 </p>
+                <FavoriteActions
+                  cleanerUserId={f.cleanerUserId}
+                  cleanerName={f.cleanerUser.name}
+                />
               </div>
             );
           })}

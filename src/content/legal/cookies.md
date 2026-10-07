@@ -21,6 +21,7 @@ Imprescindibles para que la plataforma funcione. No se pueden desactivar.
 | Cookies de sesión de autenticación (Auth.js / NextAuth) | Mantener tu sesión iniciada y proteger el acceso por rol | Sesión / hasta el cierre de sesión | Propia (1ª parte) |
 | Token de seguridad (CSRF) | Prevenir ataques de falsificación de petición | Sesión | Propia (1ª parte) |
 | `geslimpia_cc` | Recordar tu elección sobre las cookies para no volver a preguntarte | 180 días | Propia (1ª parte) |
+| Google reCAPTCHA (p. ej. `_GRECAPTCHA`) | Distinguir personas de programas automáticos en el registro, el inicio de sesión y la recuperación de contraseña, para proteger las cuentas | Hasta 6 meses | Tercero — Google Ireland Ltd. |
 
 ### b) Cookies analíticas (opcionales — solo con tu consentimiento)
 
@@ -52,4 +53,4 @@ El tratamiento de los datos personales que puedan recabarse mediante cookies se 
 
 ---
 
-**Responsable:** Dependalium Global Services, S.L. · NIF B26786962 · Bailèn de les Espenyes, 6, 1.º, 08301 Mataró (Barcelona) · info@dependalium.com
+**Responsable:** Dependalium Global Services, S.L. · NIF B26786962 · Baixada de les Espenyes, 6, 1.º, 08301 Mataró (Barcelona) · info@dependalium.com

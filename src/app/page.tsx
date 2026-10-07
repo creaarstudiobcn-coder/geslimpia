@@ -47,7 +47,7 @@ export default function HomePage() {
           <div className="container-page flex min-h-[32rem] items-center py-20 lg:min-h-[40rem]">
             <div className="max-w-xl animate-fade-up">
               <span className="chip mb-5 bg-white/90 shadow-card backdrop-blur">
-                ✨ Mataró i el Maresme
+                ✨ Toda la provincia de Barcelona
               </span>
               <h1 className="text-4xl font-bold leading-tight tracking-tight text-white drop-shadow sm:text-5xl">
                 Encuentra limpiadora de confianza{" "}

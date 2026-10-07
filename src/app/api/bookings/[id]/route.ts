@@ -3,19 +3,24 @@ import { prisma } from "@/lib/prisma";
 import { getActiveSession } from "@/lib/session";
 import { sendBookingAcceptedEmail } from "@/lib/email";
 
-const VALID = ["ACEPTADA", "RECHAZADA", "COMPLETADA"];
+const VALID = ["ACEPTADA", "RECHAZADA", "COMPLETADA", "CANCELADA"];
 
 // Transiciones permitidas. Antes no había ninguna: una reserva PENDIENTE (o
 // RECHAZADA) podía saltar directa a COMPLETADA, y eso es lo que permitía a un
 // hogar fabricarse una limpieza que nunca ocurrió para poder valorarla.
+// CANCELADA: el hogar retira una solicitud que la limpiadora aún no ha
+// contestado (se equivocó de día, ya encontró a otra…). El contacto ya hecho
+// sigue contando para el cupo: cancelar no devuelve contactos.
 const TRANSICIONES: Record<string, string[]> = {
-  PENDIENTE: ["ACEPTADA", "RECHAZADA"],
+  PENDIENTE: ["ACEPTADA", "RECHAZADA", "CANCELADA"],
   ACEPTADA: ["COMPLETADA"],
   RECHAZADA: [],
   COMPLETADA: [],
+  CANCELADA: [],
 };
 
-// Actualizar estado de una reserva (la limpiadora acepta/rechaza/completa)
+// Actualizar estado de una reserva (la limpiadora acepta/rechaza/completa; el
+// hogar cancela una pendiente o completa una ya pasada)
 export async function PATCH(
   req: Request,
   { params }: { params: { id: string } }
@@ -48,6 +53,13 @@ export async function PATCH(
     );
   }
 
+  if (status === "CANCELADA" && !isHome) {
+    return NextResponse.json(
+      { error: "Solo el hogar puede cancelar su solicitud." },
+      { status: 403 }
+    );
+  }
+
   if (!TRANSICIONES[booking.status]?.includes(status)) {
     return NextResponse.json(
       {
@@ -70,10 +82,22 @@ export async function PATCH(
     );
   }
 
-  await prisma.booking.update({
-    where: { id: params.id },
+  // El WHERE incluye el estado que hemos validado: si entre la lectura y la
+  // escritura la otra parte lo cambió (el hogar cancela mientras la limpiadora
+  // acepta), la segunda no pisa a la primera con una transición que ya no vale.
+  const { count } = await prisma.booking.updateMany({
+    where: { id: params.id, status: booking.status },
     data: { status },
   });
+  if (count === 0) {
+    return NextResponse.json(
+      {
+        error:
+          "La reserva ha cambiado mientras tanto. Recarga la página para ver su estado actual.",
+      },
+      { status: 409 }
+    );
+  }
 
   // Cuando la limpiadora acepta, avisamos al hogar por email (no bloquea la acción)
   if (status === "ACEPTADA" && isCleaner) {

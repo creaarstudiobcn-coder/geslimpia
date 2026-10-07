@@ -3,6 +3,12 @@ import { prisma } from "@/lib/prisma";
 import { getActiveSession } from "@/lib/session";
 import { stripe, stripeConfigured, demoMode, priceIdForPlan } from "@/lib/stripe";
 import { appBaseUrl } from "@/lib/site";
+import { subscriptionIsActive } from "@/lib/suscripcion";
+import {
+  leerSuscripcionStripe,
+  sigueViva,
+  urlPortalCliente,
+} from "@/lib/suscripcionStripe";
 
 export async function POST(req: Request) {
   const session = await getActiveSession();
@@ -18,12 +24,12 @@ export async function POST(req: Request) {
   // el upsert a PENDIENTE de más abajo le quitaría el acceso que ya ha pagado
   // (botón atrás, doble clic o un enlace guardado bastan para provocarlo).
   // Para cambiar de plan está /dashboard/plan, que sí lo hace a través de Stripe.
+  // Mismo criterio que el resto de la app (subscriptionIsActive): una fila
+  // ACTIVA cuyo periodo ya venció no da acceso, así que tampoco bloquea pagar.
   const existing = await prisma.subscription.findUnique({
     where: { userId: session.user.id },
   });
-  const vigente =
-    !existing?.currentPeriodEnd || existing.currentPeriodEnd > new Date();
-  if (existing?.status === "ACTIVA" && vigente) {
+  if (subscriptionIsActive(existing)) {
     return NextResponse.json({ url: "/dashboard/plan" });
   }
 
@@ -38,11 +44,43 @@ export async function POST(req: Request) {
         );
       }
 
+      // Si ya tiene una suscripción en Stripe que sigue viva (pago fallido en
+      // past_due, o un Checkout que quedó en incomplete), NO abrimos otro: cada
+      // Checkout crea una suscripción nueva y acabaría pagando dos cuotas. Lo
+      // que necesita es arreglar el cobro de la que ya tiene, y eso se hace en
+      // el Customer Portal de Stripe (actualizar tarjeta / pagar la factura).
+      if (existing?.stripeSubscriptionId) {
+        const actual = await leerSuscripcionStripe(existing.stripeSubscriptionId);
+        if (actual && sigueViva(actual.status)) {
+          let portal: string | null = null;
+          try {
+            portal = await urlPortalCliente(
+              existing,
+              `${appUrl}/dashboard/plan`
+            );
+          } catch (err) {
+            console.error("stripe billing portal error", err);
+          }
+          if (portal) return NextResponse.json({ url: portal });
+          return NextResponse.json(
+            {
+              error:
+                "Ya tienes una suscripción con un pago pendiente. Actualiza tu tarjeta desde «Mi plan» o escríbenos y lo resolvemos.",
+            },
+            { status: 409 }
+          );
+        }
+      }
+
       const checkout = await stripe.checkout.sessions.create({
         mode: "subscription",
         payment_method_types: ["card"],
         line_items: [{ price: priceId, quantity: 1 }],
-        customer_email: session.user.email ?? undefined,
+        // Reutilizamos el cliente de Stripe si ya lo tiene: con customer_email
+        // cada Checkout creaba un cliente nuevo y su historial quedaba partido.
+        ...(existing?.stripeCustomerId
+          ? { customer: existing.stripeCustomerId }
+          : { customer_email: session.user.email ?? undefined }),
         client_reference_id: session.user.id,
         metadata: { userId: session.user.id, plan },
         success_url: `${appUrl}/suscripcion/exito?session_id={CHECKOUT_SESSION_ID}`,

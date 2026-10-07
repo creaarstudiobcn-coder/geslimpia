@@ -12,11 +12,22 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const bio = String(body.bio ?? "").trim().slice(0, 500);
-    const hourlyRate = Math.min(999, Math.max(0, Number(body.hourlyRate) || 0));
+    // La tarifa es lo primero que ve un hogar: 0 € (o vacía) se publicaba como
+    // "0,00 €/h". Se exige un valor positivo en vez de guardarlo recortado.
+    const hourlyRate = Number(body.hourlyRate);
+    if (!Number.isFinite(hourlyRate) || hourlyRate <= 0 || hourlyRate > 999) {
+      return NextResponse.json(
+        { error: "La tarifa por hora tiene que ser mayor que 0 € (y menor de 1000 €)." },
+        { status: 400 }
+      );
+    }
     const availability = String(body.availability ?? "").trim().slice(0, 200);
     // photoUrl lo gestiona exclusivamente /api/cleaner/photo — no se acepta aquí.
+    // Solo se toca si viene. El onboarding no lo manda: si cada vez que se
+    // repetía lo ponía a true, la limpiadora que se había marcado "no
+    // disponible" volvía a salir como "Disponible hoy" sin saberlo.
     const disponibleHoy =
-      body.disponibleHoy === undefined ? true : Boolean(body.disponibleHoy);
+      body.disponibleHoy === undefined ? undefined : Boolean(body.disponibleHoy);
 
     const validServices = SERVICIOS.map((s) => s.id);
     const services = (Array.isArray(body.services) ? body.services : []).filter(
@@ -34,7 +45,7 @@ export async function POST(req: Request) {
         availability,
         services: stringifyList(services),
         zones: stringifyList(zones),
-        disponibleHoy,
+        ...(disponibleHoy === undefined ? {} : { disponibleHoy }),
         onboarded: true,
       },
       create: {
@@ -44,7 +55,8 @@ export async function POST(req: Request) {
         availability,
         services: stringifyList(services),
         zones: stringifyList(zones),
-        disponibleHoy,
+        // Alta nueva sin valor: el default del esquema (disponible).
+        ...(disponibleHoy === undefined ? {} : { disponibleHoy }),
         onboarded: true,
       },
     });

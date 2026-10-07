@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { stripeConfigured } from "@/lib/stripe";
+import { subscriptionIsActive } from "@/lib/suscripcion";
 import Logo from "@/components/Logo";
 import SubscriptionChooser from "./SubscriptionChooser";
 
@@ -14,7 +15,10 @@ export default async function SuscripcionPage({
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   if (user.role !== "HOGAR") redirect("/dashboard");
-  if (user.subscription?.status === "ACTIVA") redirect("/dashboard");
+  // Con subscriptionIsActive y no con status === "ACTIVA": una fila ACTIVA
+  // con el periodo vencido (webhook de baja perdido) no da acceso, y mandarla a
+  // /dashboard la dejaba en un bucle sin poder volver a pagar.
+  if (subscriptionIsActive(user.subscription)) redirect("/dashboard");
 
   const preselect =
     searchParams.plan === "COMPLETO" ? "COMPLETO" : "BASICO";

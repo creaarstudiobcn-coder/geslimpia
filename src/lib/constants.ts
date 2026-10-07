@@ -1,5 +1,7 @@
 // Constantes compartidas de GesLimpia
 
+import { MUNICIPIOS } from "./zonas";
+
 // Versión vigente de los textos legales (ver la cabecera de
 // src/content/legal/privacidad.md). Se guarda junto al consentimiento porque el
 // RGPD exige poder demostrar qué texto concreto aceptó cada persona, no solo que
@@ -10,7 +12,16 @@ export const LEGAL_VERSION = "1.0";
 // restablecimiento no acaben exigiendo cosas distintas.
 export const PASSWORD_MIN = 6;
 
-export const POBLACIONES = [
+// Horas de una reserva. El mismo rango en el formulario (min/max del input) y
+// en la API, que es la que manda.
+export const HORAS_MIN = 1;
+export const HORAS_MAX = 12;
+
+// Poblaciones del registro, la búsqueda y las zonas de cada limpiadora. Primero
+// las del Maresme de siempre (hay cuentas guardadas con esos valores, incluida
+// "Otra del Maresme"); después los municipios con ficha en /zonas, para que
+// quien llega desde Terrassa o Manresa pueda elegir su población.
+const POBLACIONES_MARESME = [
   "Mataró",
   "Argentona",
   "Premià de Mar",
@@ -19,8 +30,16 @@ export const POBLACIONES = [
   "Cabrera de Mar",
   "El Masnou",
   "Caldes d'Estrac",
+];
+
+export const POBLACIONES: readonly string[] = [
+  ...POBLACIONES_MARESME,
+  ...MUNICIPIOS.map((m) => m.nombre)
+    .filter((n) => !POBLACIONES_MARESME.includes(n))
+    .sort((a, b) => a.localeCompare(b, "es")),
   "Otra del Maresme",
-] as const;
+  "Otra de la provincia de Barcelona",
+];
 
 export const SERVICIOS = [
   { id: "hogar", label: "Limpieza del hogar", emoji: "🏠" },

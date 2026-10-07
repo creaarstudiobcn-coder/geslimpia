@@ -10,10 +10,10 @@ La plataforma **GesLimpia** (en adelante, la «Plataforma») es titularidad de:
 
 - **Denominación social:** Dependalium Global Services, S.L. (en adelante, la «Empresa», «GesLimpia» o «nosotros»).
 - **NIF:** B26786962
-- **Domicilio social:** Bailèn de les Espenyes, 6, 1.º, 08301 Mataró (Barcelona), España.
+- **Domicilio social:** Baixada de les Espenyes, 6, 1.º, 08301 Mataró (Barcelona), España.
 - **Correo electrónico de contacto:** info@dependalium.com
 - **Datos registrales:** Sociedad inscrita en el Registro Mercantil de Barcelona, Tomo 100046, Folio 219, Hoja B-561219, Inscripción 1.ª.
-- **Sitio web:** https://geslimpia.es
+- **Sitio web:** https://www.geslimpia.es
 
 ## 2. Objeto y naturaleza de la Plataforma
 
@@ -189,6 +189,6 @@ No obstante, cuando el Usuario solicite expresamente el inicio inmediato del ser
 Para cualquier consulta relacionada con estos Términos y Condiciones:
 
 - **Dependalium Global Services, S.L.**
-- Bailèn de les Espenyes, 6, 1.º
+- Baixada de les Espenyes, 6, 1.º
 - 08301 Mataró (Barcelona), España
 - Correo electrónico: info@dependalium.com

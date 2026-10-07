@@ -1,6 +1,15 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { AdminHeader, Badge, statusTone } from "@/components/admin/AdminUi";
+import {
+  AdminHeader,
+  Badge,
+  estadoSuscripcion,
+  planLabel,
+  statusLabel,
+  statusTone,
+} from "@/components/admin/AdminUi";
+
+export const metadata = { title: "Hogares · Admin · GesLimpia" };
 
 export default async function AdminHogares({
   searchParams,
@@ -60,7 +69,7 @@ export default async function AdminHogares({
               href={`/admin/hogares/${h.id}`}
               className="flex flex-wrap items-center justify-between gap-2 p-4 hover:bg-espuma/50"
             >
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="truncate font-medium text-petroleo">{h.name}</p>
                 <p className="truncate text-xs text-slate-400">
                   {h.email} · {h.ciudad ?? "—"}
@@ -68,8 +77,9 @@ export default async function AdminHogares({
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 {h.subscription ? (
-                  <Badge tone={statusTone(h.subscription.status)}>
-                    {h.subscription.plan} · {h.subscription.status}
+                  <Badge tone={statusTone(estadoSuscripcion(h.subscription))}>
+                    {planLabel(h.subscription.plan)} ·{" "}
+                    {statusLabel(estadoSuscripcion(h.subscription))}
                   </Badge>
                 ) : (
                   <Badge tone="slate">Sin suscripción</Badge>

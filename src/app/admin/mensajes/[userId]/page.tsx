@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { AdminHeader, Badge } from "@/components/admin/AdminUi";
+import { AdminHeader, Badge, roleLabel } from "@/components/admin/AdminUi";
 import SupportChat from "@/components/admin/SupportChat";
+
+export const metadata = { title: "Chat de soporte · Admin · GesLimpia" };
 
 export default async function AdminChatUsuario({
   params,
@@ -23,7 +25,7 @@ export default async function AdminChatUsuario({
     <>
       <AdminHeader
         title={user.name}
-        subtitle={`${user.email} · ${user.role}`}
+        subtitle={`${user.email} · ${roleLabel(user.role)}`}
         back={{ href: "/admin/mensajes", label: "Mensajes" }}
       />
       {!user.active && (

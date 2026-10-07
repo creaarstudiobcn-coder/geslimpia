@@ -12,6 +12,7 @@
 //                       (el dominio debe estar verificado en Resend)
 
 import { SITE_URL } from "@/lib/site";
+import { fechaHoraCompleta } from "@/lib/fechas";
 
 // Base de la API. RESEND_BASE_URL permite apuntar a un buzón local que finge ser
 // Resend para comprobar destinatario, asunto y cuerpo sin gastar cuota ni
@@ -125,7 +126,7 @@ function layout({ heading, intro, bodyHtml = "", ctaLabel, ctaPath }: Layout): s
         </td></tr>
         <tr><td style="padding:18px 28px;border-top:1px solid #eef1f2;">
           <p style="margin:0;font-size:12px;line-height:1.6;color:#8a979e;">
-            GesLimpia · Conectamos hogares con limpiadoras de confianza en el Maresme.<br/>
+            GesLimpia · Conectamos hogares con limpiadoras de confianza en la provincia de Barcelona.<br/>
             <a href="${SITE_URL}" style="color:${BRAND};text-decoration:none;">www.geslimpia.es</a>
           </p>
         </td></tr>
@@ -195,9 +196,9 @@ export async function sendNewContactEmail(args: {
   hours?: number;
   notes?: string;
 }): Promise<boolean> {
-  const fecha = args.date
-    ? new Intl.DateTimeFormat("es-ES", { dateStyle: "full" }).format(args.date)
-    : "Por concretar";
+  // Con la hora y en hora de Madrid: el servidor corre en UTC y, sin zona, una
+  // limpieza a las 00:30 salía con el día anterior (y la hora no salía).
+  const fecha = args.date ? fechaHoraCompleta(args.date) : "Por concretar";
   const rows: Array<[string, string]> = [
     ["Familia", args.homeName || "Un hogar"],
     ["Fecha propuesta", fecha],

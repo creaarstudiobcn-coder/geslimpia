@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { hora } from "@/lib/fechas";
+
+// Mismo límite que la API (/api/messages).
+const MAX_CHARS = 2000;
 
 type Msg = {
   id: string;
@@ -21,6 +25,7 @@ export default function ChatThread({
   const [messages, setMessages] = useState<Msg[]>(initialMessages);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
   function scrollToBottom() {
@@ -50,8 +55,9 @@ export default function ChatThread({
   async function send(e: React.FormEvent) {
     e.preventDefault();
     const body = text.trim();
-    if (!body) return;
+    if (!body || sending) return;
     setSending(true);
+    setError("");
     setText("");
     // Optimista
     const optimistic: Msg = {
@@ -61,14 +67,24 @@ export default function ChatThread({
       createdAt: new Date().toISOString(),
     };
     setMessages((m) => [...m, optimistic]);
-    const res = await fetch("/api/messages", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ bookingId, body }),
-    });
-    setSending(false);
-    if (res.ok) {
-      const data = await res.json();
+    // Si el envío falla, el mensaje no puede quedarse en pantalla como si se
+    // hubiera enviado: se quita, el texto vuelve al cuadro y se avisa.
+    const deshacer = (mensaje: string) => {
+      setMessages((m) => m.filter((msg) => msg.id !== optimistic.id));
+      setText((actual) => actual || body);
+      setError(mensaje);
+    };
+    try {
+      const res = await fetch("/api/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookingId, body }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.message) {
+        deshacer(data.error ?? "No se pudo enviar el mensaje. Inténtalo de nuevo.");
+        return;
+      }
       setMessages((m) =>
         m.map((msg) =>
           msg.id === optimistic.id
@@ -81,6 +97,10 @@ export default function ChatThread({
             : msg
         )
       );
+    } catch {
+      deshacer("No se pudo enviar: revisa tu conexión e inténtalo de nuevo.");
+    } finally {
+      setSending(false);
     }
   }
 
@@ -112,10 +132,7 @@ export default function ChatThread({
                     mine ? "text-white/70" : "text-slate-400"
                   }`}
                 >
-                  {new Date(m.createdAt).toLocaleTimeString("es-ES", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  {hora(m.createdAt)}
                 </p>
               </div>
             </div>
@@ -124,6 +141,14 @@ export default function ChatThread({
         <div ref={bottomRef} />
       </div>
 
+      {error && (
+        <p
+          role="alert"
+          className="mx-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600"
+        >
+          {error}
+        </p>
+      )}
       <form
         onSubmit={send}
         className="flex items-center gap-2 border-t border-slate-100 p-3"
@@ -131,15 +156,17 @@ export default function ChatThread({
         <input
           className="input"
           value={text}
+          maxLength={MAX_CHARS}
           onChange={(e) => setText(e.target.value)}
           placeholder="Escribe un mensaje…"
+          aria-label="Mensaje"
         />
         <button
           type="submit"
           disabled={sending || !text.trim()}
           className="btn-primary"
         >
-          Enviar
+          {sending ? "Enviando…" : "Enviar"}
         </button>
       </form>
     </>

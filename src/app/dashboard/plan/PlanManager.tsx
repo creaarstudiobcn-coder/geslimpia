@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { PLANES, type PlanId } from "@/lib/constants";
+import { fechaLarga } from "@/lib/fechas";
 
 export default function PlanManager({
   plan,
@@ -24,9 +25,7 @@ export default function PlanManager({
   const current = PLANES[plan];
   const other = plan === "BASICO" ? PLANES.COMPLETO : PLANES.BASICO;
   const pct = Math.min(100, Math.round((contactsUsed / limit) * 100));
-  const fechaFin = periodEnd
-    ? new Date(periodEnd).toLocaleDateString("es-ES", { dateStyle: "long" })
-    : null;
+  const fechaFin = periodEnd ? fechaLarga(periodEnd) : null;
 
   async function changePlan(target: PlanId) {
     setLoading("change");

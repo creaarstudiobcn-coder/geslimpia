@@ -142,7 +142,7 @@ export default function SiteFooter() {
             limpieza lo fija cada limpiadora y se acuerda directamente con ella.
           </p>
           <p className="mt-3">
-            © {new Date().getFullYear()} GesLimpia · Mataró i el Maresme. Todos
+            © {new Date().getFullYear()} GesLimpia · Provincia de Barcelona. Todos
             los derechos reservados.
           </p>
         </div>

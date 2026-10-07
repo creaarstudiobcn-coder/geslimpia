@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { diaMesHora } from "@/lib/fechas";
+
+// Mismo límite que la API de soporte.
+const MAX_CHARS = 2000;
 
 type Msg = { id: string; fromAdmin: boolean; body: string; createdAt: string };
 
@@ -18,6 +22,7 @@ export default function SupportChat({
   const [messages, setMessages] = useState<Msg[]>(initialMessages);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const getUrl =
@@ -43,8 +48,9 @@ export default function SupportChat({
   async function send(e: React.FormEvent) {
     e.preventDefault();
     const value = text.trim();
-    if (!value) return;
+    if (!value || sending) return;
     setSending(true);
+    setError("");
     setText("");
     const optimistic: Msg = {
       id: `tmp-${Date.now()}`,
@@ -53,17 +59,31 @@ export default function SupportChat({
       createdAt: new Date().toISOString(),
     };
     setMessages((m) => [...m, optimistic]);
-    const res = await fetch(postUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(mode === "admin" ? { userId, body: value } : { body: value }),
-    });
-    setSending(false);
-    if (res.ok) {
-      const data = await res.json();
+    // Si falla, fuera el mensaje optimista, el texto vuelve al cuadro y aviso:
+    // antes se quedaba en pantalla como enviado aunque no hubiera llegado.
+    const deshacer = (mensaje: string) => {
+      setMessages((m) => m.filter((msg) => msg.id !== optimistic.id));
+      setText((actual) => actual || value);
+      setError(mensaje);
+    };
+    try {
+      const res = await fetch(postUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(mode === "admin" ? { userId, body: value } : { body: value }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.message) {
+        deshacer(data.error ?? "No se pudo enviar el mensaje. Inténtalo de nuevo.");
+        return;
+      }
       setMessages((m) =>
         m.map((msg) => (msg.id === optimistic.id ? data.message : msg))
       );
+    } catch {
+      deshacer("No se pudo enviar: revisa tu conexión e inténtalo de nuevo.");
+    } finally {
+      setSending(false);
     }
   }
 
@@ -90,12 +110,7 @@ export default function SupportChat({
               >
                 <p className="whitespace-pre-wrap break-words">{m.body}</p>
                 <p className={`mt-1 text-[10px] ${mine ? "text-white/70" : "text-slate-400"}`}>
-                  {new Date(m.createdAt).toLocaleString("es-ES", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  {diaMesHora(m.createdAt)}
                 </p>
               </div>
             </div>
@@ -103,15 +118,22 @@ export default function SupportChat({
         })}
         <div ref={bottomRef} />
       </div>
+      {error && (
+        <p role="alert" className="mx-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+          {error}
+        </p>
+      )}
       <form onSubmit={send} className="flex items-center gap-2 border-t border-slate-100 p-3">
         <input
           className="input"
           value={text}
+          maxLength={MAX_CHARS}
           onChange={(e) => setText(e.target.value)}
           placeholder="Escribe un mensaje…"
+          aria-label="Mensaje"
         />
         <button type="submit" disabled={sending || !text.trim()} className="btn-primary">
-          Enviar
+          {sending ? "Enviando…" : "Enviar"}
         </button>
       </form>
     </div>

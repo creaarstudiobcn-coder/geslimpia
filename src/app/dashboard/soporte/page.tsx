@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { PageTitle } from "@/components/ui";
 import SupportChat from "@/components/admin/SupportChat";
 
+export const metadata = { title: "Mensajes del equipo · GesLimpia" };
+
 // "Mensajes del equipo": chat de soporte del usuario con el equipo de GesLimpia.
 export default async function SoportePage() {
   const user = await getCurrentUser();

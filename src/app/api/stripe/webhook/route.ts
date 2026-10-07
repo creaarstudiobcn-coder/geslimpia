@@ -2,8 +2,11 @@ import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { stripe, planForPriceId } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
-import { PLANES, type PlanId } from "@/lib/constants";
-import { sendSubscriptionReceiptEmail } from "@/lib/email";
+import {
+  confirmarAltaDesdeCheckout,
+  mapStripeStatus,
+  toDate,
+} from "@/lib/suscripcionStripe";
 
 // Webhook de Stripe. Configura el endpoint en el dashboard de Stripe apuntando a
 // https://TU-DOMINIO/api/stripe/webhook y guarda el secreto en STRIPE_WEBHOOK_SECRET.
@@ -14,26 +17,11 @@ import { sendSubscriptionReceiptEmail } from "@/lib/email";
 //   · invoice.payment_failed         -> pago fallido (marca como PENDIENTE)
 //   · customer.subscription.updated  -> cambios de estado (activa / impago / cancelación programada)
 //   · customer.subscription.deleted  -> cancelación definitiva
-
-// Traduce el estado de Stripe a nuestro enum textual (ACTIVA | PENDIENTE | CANCELADA).
-function mapStripeStatus(status: Stripe.Subscription.Status): string {
-  switch (status) {
-    case "active":
-    case "trialing":
-      return "ACTIVA";
-    case "canceled":
-    case "unpaid":
-      return "CANCELADA";
-    default:
-      // incomplete, incomplete_expired, past_due, paused…
-      return "PENDIENTE";
-  }
-}
-
-// Convierte un epoch (segundos) de Stripe en Date, o null si no viene.
-function toDate(epochSeconds: number | null | undefined): Date | null {
-  return epochSeconds ? new Date(epochSeconds * 1000) : null;
-}
+//
+// Stripe reintenta los eventos y puede entregarlos repetidos o desordenados, así
+// que cada caso tiene que poder ejecutarse dos veces sin efectos de más: todos
+// filtran por el id de la suscripción de Stripe y el alta no reenvía el recibo
+// si la fila ya estaba activa con esa misma suscripción.
 
 export async function POST(req: Request) {
   if (!stripe) {
@@ -55,67 +43,16 @@ export async function POST(req: Request) {
 
   try {
     switch (event.type) {
-      // Primera activación tras completar el Checkout.
+      // Primera activación tras completar el Checkout. Toda la lógica (estado
+      // real en Stripe, cancelar una suscripción anterior que siga viva,
+      // idempotencia y recibo) está en confirmarAltaDesdeCheckout, que comparte
+      // con /suscripcion/exito.
       case "checkout.session.completed": {
         const s = event.data.object as Stripe.Checkout.Session;
+        if (s.mode !== "subscription") break;
         const userId = s.metadata?.userId || s.client_reference_id || undefined;
-        const plan = (s.metadata?.plan as "BASICO" | "COMPLETO") || "BASICO";
         if (!userId) break;
-
-        // Intentamos leer el periodo real de la suscripción recién creada.
-        let periodStart: Date | null = null;
-        let periodEnd: Date | null = null;
-        if (s.subscription) {
-          const sub = await stripe.subscriptions.retrieve(s.subscription as string);
-          periodStart = toDate(sub.current_period_start);
-          periodEnd = toDate(sub.current_period_end);
-        }
-        if (!periodEnd) {
-          periodEnd = new Date();
-          periodEnd.setMonth(periodEnd.getMonth() + 1);
-        }
-        periodStart = periodStart ?? new Date();
-
-        await prisma.subscription.upsert({
-          where: { userId },
-          update: {
-            plan,
-            status: "ACTIVA",
-            // Alta nueva sobre una fila vieja (alguien que se dio de baja y
-            // vuelve): la baja programada de la suscripción anterior no puede
-            // heredarse, o volvería a caducar al final del primer mes.
-            cancelAtPeriodEnd: false,
-            stripeCustomerId: (s.customer as string) ?? undefined,
-            stripeSubscriptionId: (s.subscription as string) ?? undefined,
-            currentPeriodStart: periodStart,
-            currentPeriodEnd: periodEnd,
-          },
-          create: {
-            userId,
-            plan,
-            status: "ACTIVA",
-            stripeCustomerId: (s.customer as string) ?? undefined,
-            stripeSubscriptionId: (s.subscription as string) ?? undefined,
-            currentPeriodStart: periodStart,
-            currentPeriodEnd: periodEnd,
-          },
-        });
-
-        // Recibo / confirmación por email (no bloquea el procesado del webhook)
-        const buyer = await prisma.user.findUnique({
-          where: { id: userId },
-          select: { email: true, name: true },
-        });
-        if (buyer?.email) {
-          const planInfo = PLANES[plan as PlanId] ?? PLANES.BASICO;
-          await sendSubscriptionReceiptEmail({
-            to: buyer.email,
-            name: buyer.name ?? "",
-            planName: planInfo.nombre,
-            priceLabel: planInfo.precioLabel,
-            contactos: planInfo.contactos,
-          });
-        }
+        await confirmarAltaDesdeCheckout(s, userId);
         break;
       }
 
@@ -179,6 +116,9 @@ export async function POST(req: Request) {
       // Cancelación consumada: llega cuando vence el periodo de una baja
       // programada (o si se cancela en el acto desde el panel de Stripe). Es
       // este evento, y no el botón de cancelar, el que corta el acceso.
+      // Solo afecta a la fila que tiene ESTA suscripción: cuando un alta nueva
+      // sustituye a una vieja (que cancelamos), el aviso de la vieja llega
+      // después y no puede quitarle el acceso a la nueva.
       case "customer.subscription.deleted": {
         const sub = event.data.object as Stripe.Subscription;
         await prisma.subscription.updateMany({

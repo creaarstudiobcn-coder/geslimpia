@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { PageTitle, EmptyState, StatusBadge } from "@/components/ui";
 import Link from "next/link";
 import ReviewButton from "./ReviewButton";
+import BookingActions from "./BookingActions";
+import { fechaHora } from "@/lib/fechas";
 
 export const metadata = { title: "Mis reservas · GesLimpia" };
 
@@ -32,6 +34,8 @@ export default async function ReservasPage() {
         ).map((r) => r.bookingId as string)
       )
     : new Set<string>();
+
+  const ahora = new Date();
 
   return (
     <>
@@ -70,10 +74,7 @@ export default async function ReservasPage() {
                 <div className="mt-3 flex flex-wrap gap-4 text-sm text-slate-600">
                   <span>
                     📅{" "}
-                    {new Date(b.date).toLocaleString("es-ES", {
-                      dateStyle: "medium",
-                      timeStyle: "short",
-                    })}
+                    {fechaHora(b.date)}
                   </span>
                   <span>⏱️ {b.hours} h</span>
                 </div>
@@ -84,6 +85,13 @@ export default async function ReservasPage() {
                   >
                     💬 Abrir chat
                   </Link>
+                  {isHome && (
+                    <BookingActions
+                      bookingId={b.id}
+                      canCancel={b.status === "PENDIENTE"}
+                      canComplete={b.status === "ACEPTADA" && b.date <= ahora}
+                    />
+                  )}
                   {isHome &&
                     b.status === "COMPLETADA" &&
                     !reviewed.has(b.id) && (

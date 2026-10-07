@@ -125,7 +125,13 @@ async function main() {
     const user = await prisma.user.create({
       data: {
         name: c.name,
-        email: `${c.name.toLowerCase().split(" ")[0]}@demo.geslimpia.es`,
+        // Sin tildes: "lucía@…" no es una dirección que se pueda usar de
+        // verdad (muchos servidores de correo y formularios la rechazan).
+        email: `${c.name
+          .toLowerCase()
+          .split(" ")[0]
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")}@demo.geslimpia.es`,
         passwordHash,
         role: "LIMPIADORA",
         ciudad: c.ciudad,

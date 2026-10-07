@@ -9,7 +9,10 @@ import {
   servicioLabel,
   servicioEmoji,
   eur,
+  HORAS_MIN,
+  HORAS_MAX,
 } from "@/lib/constants";
+import { ahoraParaInputLocal, fechaCorta } from "@/lib/fechas";
 
 type Cleaner = {
   userId: string;
@@ -33,13 +36,25 @@ export default function CleanerSearch({
   cleaners,
   filters,
   contactInfo,
+  abrirLimpiadora,
 }: {
   cleaners: Cleaner[];
   filters: { zona: string; servicio: string; disponible: boolean };
   contactInfo: { used: number; limit: number; planName: string };
+  // Limpiadora cuya ficha se abre al llegar (enlace "Contactar" de Favoritas).
+  abrirLimpiadora?: string;
 }) {
   const router = useRouter();
   const [modal, setModal] = useState<Cleaner | null>(null);
+  // Se abre tras montar y no en el estado inicial: así el modal nunca se pinta
+  // en el servidor (usa la hora local del navegador para el mínimo de fecha).
+  useEffect(() => {
+    if (!abrirLimpiadora) return;
+    const c = cleaners.find((x) => x.userId === abrirLimpiadora);
+    if (c) setModal(c);
+    // Solo al llegar a la página: refrescar la lista no debe reabrirlo.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [abrirLimpiadora]);
   const [favs, setFavs] = useState<Record<string, boolean>>(
     Object.fromEntries(cleaners.map((c) => [c.userId, c.isFavorite]))
   );
@@ -56,14 +71,22 @@ export default function CleanerSearch({
     router.push(`/dashboard?${params.toString()}`);
   }
 
+  // Optimista: la estrella cambia al instante y, si la API falla, vuelve a
+  // como estaba (antes se quedaba marcada aunque no se hubiera guardado).
   async function toggleFav(id: string) {
-    setFavs((f) => ({ ...f, [id]: !f[id] }));
-    await fetch("/api/favorites", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ cleanerUserId: id }),
-    });
-    router.refresh();
+    const antes = !!favs[id];
+    setFavs((f) => ({ ...f, [id]: !antes }));
+    try {
+      const res = await fetch("/api/favorites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cleanerUserId: id, favorite: !antes }),
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      router.refresh();
+    } catch {
+      setFavs((f) => ({ ...f, [id]: antes }));
+    }
   }
 
   return (
@@ -150,7 +173,10 @@ export default function CleanerSearch({
                     </p>
                     <button
                       onClick={() => toggleFav(c.userId)}
-                      aria-label="Favorita"
+                      aria-label={
+                        favs[c.userId] ? "Quitar de favoritas" : "Añadir a favoritas"
+                      }
+                      aria-pressed={!!favs[c.userId]}
                       className="text-lg"
                     >
                       {favs[c.userId] ? "⭐" : "☆"}
@@ -222,6 +248,9 @@ function ContactModal({
 }) {
   const router = useRouter();
   const [date, setDate] = useState("");
+  // El modal solo se pinta en el cliente (tras un clic), así que aquí sí se
+  // puede usar la hora local del navegador sin romper la hidratación.
+  const [minDate] = useState(ahoraParaInputLocal);
   const [hours, setHours] = useState("2");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
@@ -251,23 +280,43 @@ function ContactModal({
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    // El input datetime-local da la hora LOCAL sin zona ("2026-10-10T10:00").
+    // Se convierte aquí, en el navegador, que sí sabe en qué zona está; si se
+    // manda tal cual, el servidor (en UTC) la interpreta como hora UTC.
+    const fecha = new Date(date);
+    if (!date || isNaN(fecha.getTime())) {
+      setError("Indica el día y la hora de la limpieza.");
+      return;
+    }
+    if (fecha.getTime() <= Date.now()) {
+      setError("La fecha elegida ya ha pasado. Elige un día y una hora futuros.");
+      return;
+    }
     setLoading(true);
-    const res = await fetch("/api/bookings", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        cleanerUserId: cleaner.userId,
-        date,
-        hours: Number(hours),
-        notes,
-      }),
-    });
-    const data = await res.json().catch(() => ({}));
-    setLoading(false);
+    let res: Response;
+    let data: { bookingId?: string; error?: string; message?: string };
+    try {
+      res = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cleanerUserId: cleaner.userId,
+          date: fecha.toISOString(),
+          hours: Number(hours),
+          notes,
+        }),
+      });
+      data = await res.json().catch(() => ({}));
+    } catch {
+      setError("No se pudo conectar. Revisa tu conexión e inténtalo de nuevo.");
+      return;
+    } finally {
+      setLoading(false);
+    }
     if (!res.ok) {
       if (res.status === 403 && data.error === "limit") {
         setLimitReached(true);
-        setError(data.message);
+        setError(data.message ?? "Has llegado al límite de tu plan.");
         return;
       }
       setError(data.error ?? "No se pudo crear la reserva.");
@@ -334,7 +383,7 @@ function ContactModal({
                     <p className="mt-1 text-slate-600">“{r.comment}”</p>
                   )}
                   <p className="mt-1 text-xs text-slate-400">
-                    {new Date(r.createdAt).toLocaleDateString("es-ES")}
+                    {fechaCorta(r.createdAt)}
                   </p>
                 </li>
               ))}
@@ -355,6 +404,7 @@ function ContactModal({
             <input
               type="datetime-local"
               required
+              min={minDate}
               className="input"
               value={date}
               onChange={(e) => setDate(e.target.value)}
@@ -364,8 +414,10 @@ function ContactModal({
             <label className="label">Horas estimadas</label>
             <input
               type="number"
-              min={1}
+              min={HORAS_MIN}
+              max={HORAS_MAX}
               step="0.5"
+              required
               className="input max-w-[120px]"
               value={hours}
               onChange={(e) => setHours(e.target.value)}

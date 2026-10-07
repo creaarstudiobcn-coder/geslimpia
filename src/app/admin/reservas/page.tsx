@@ -1,5 +1,13 @@
 import { prisma } from "@/lib/prisma";
-import { AdminHeader, Badge, statusTone } from "@/components/admin/AdminUi";
+import {
+  AdminHeader,
+  Badge,
+  statusLabel,
+  statusTone,
+} from "@/components/admin/AdminUi";
+import { fechaHora } from "@/lib/fechas";
+
+export const metadata = { title: "Reservas · Admin · GesLimpia" };
 
 export default async function AdminReservas({
   searchParams,
@@ -25,12 +33,13 @@ export default async function AdminReservas({
       />
 
       <form className="mb-5 flex gap-3">
-        <select name="estado" defaultValue={estado} className="input max-w-xs">
+        <select name="estado" defaultValue={estado} className="input min-w-0 max-w-xs flex-1">
           <option value="">Todos los estados</option>
           <option value="PENDIENTE">Pendientes</option>
           <option value="ACEPTADA">Aceptadas</option>
           <option value="RECHAZADA">Rechazadas</option>
           <option value="COMPLETADA">Completadas</option>
+          <option value="CANCELADA">Canceladas por el hogar</option>
         </select>
         <button type="submit" className="btn-primary">Filtrar</button>
       </form>
@@ -45,21 +54,17 @@ export default async function AdminReservas({
               key={b.id}
               className="flex flex-wrap items-center justify-between gap-2 p-4 text-sm"
             >
-              <div>
+              <div className="min-w-0 flex-1">
                 <span className="font-medium text-petroleo">{b.homeUser.name}</span>{" "}
                 <span className="text-slate-400">→</span>{" "}
                 <span className="font-medium text-petroleo">{b.cleanerUser.name}</span>
-                <p className="text-xs text-slate-400">
-                  {b.date.toLocaleDateString("es-ES", {
-                    day: "2-digit",
-                    month: "short",
-                    year: "numeric",
-                  })}{" "}
+                <p className="break-words text-xs text-slate-400">
+                  {fechaHora(b.date)}{" "}
                   · {b.hours} h
                   {b.notes ? ` · ${b.notes.slice(0, 60)}` : ""}
                 </p>
               </div>
-              <Badge tone={statusTone(b.status)}>{b.status}</Badge>
+              <Badge tone={statusTone(b.status)}>{statusLabel(b.status)}</Badge>
             </div>
           ))}
         </div>

@@ -11,10 +11,10 @@ En cumplimiento del artículo 10 de la Ley 34/2002, de 11 de julio, de Servicios
 - **Denominación social:** Dependalium Global Services, S.L.
 - **Nombre comercial / marca:** GesLimpia
 - **NIF:** B26786962
-- **Domicilio social:** Bailèn de les Espenyes, 6, 1.º, 08301 Mataró (Barcelona), España.
+- **Domicilio social:** Baixada de les Espenyes, 6, 1.º, 08301 Mataró (Barcelona), España.
 - **Correo electrónico:** info@dependalium.com
 - **Datos registrales:** Sociedad inscrita en el **Registro Mercantil de Barcelona**, Tomo 100046, Folio 219, Hoja B-561219, Inscripción 1.ª.
-- **Sitio web / aplicación:** https://geslimpia.es
+- **Sitio web / aplicación:** https://www.geslimpia.es
 
 ## 2. Objeto
 
@@ -50,4 +50,4 @@ Este Aviso Legal se rige por la **legislación española**. Para la resolución 
 
 ## 9. Contacto
 
-Para cualquier comunicación: **info@dependalium.com** — Dependalium Global Services, S.L., Bailèn de les Espenyes, 6, 1.º, 08301 Mataró (Barcelona).
+Para cualquier comunicación: **info@dependalium.com** — Dependalium Global Services, S.L., Baixada de les Espenyes, 6, 1.º, 08301 Mataró (Barcelona).

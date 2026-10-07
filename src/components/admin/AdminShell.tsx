@@ -72,11 +72,13 @@ export default function AdminShell({
             ))}
           </nav>
           <div className="mt-6 border-t border-white/10 pt-4">
+            {/* Antes "Ir a mi panel" → /dashboard, que manda al admin de vuelta
+                a /admin: un enlace que no llevaba a ninguna parte. */}
             <Link
-              href="/dashboard"
+              href="/"
               className="flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm text-slate-300 hover:bg-white/10 hover:text-white"
             >
-              ↩ Ir a mi panel
+              ↩ Ir a la web
             </Link>
             <button
               onClick={() => signOut({ callbackUrl: "/" })}
@@ -87,7 +89,9 @@ export default function AdminShell({
           </div>
         </aside>
 
-        <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        {/* min-w-0: un hijo flex no encoge por debajo de su contenido sin él,
+            y en móvil cualquier texto largo ensanchaba toda la página. */}
+        <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
           {children}
         </main>
       </div>

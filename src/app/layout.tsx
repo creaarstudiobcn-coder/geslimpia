@@ -13,9 +13,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "GesLimpia — Encuentra limpiadora de confianza en el Maresme",
+  title: "GesLimpia — Limpiadora de confianza en la provincia de Barcelona",
   description:
-    "Plataforma de conexión entre hogares y limpiadoras profesionales independientes en Mataró y el Maresme. Tú eliges, contactas y acuerdas directamente.",
+    "Conecta con limpiadoras profesionales independientes en la provincia de Barcelona: Barcelona, el Baix Llobregat, el Vallès, el Maresme y más. Tú eliges y acuerdas directamente.",
   /* El respaldo era "http://localhost:3000". Con una canónica declarada eso
      publicaría <link rel="canonical" href="http://localhost:3000/"> en cuanto
      faltara la variable en el entorno, que es peor que no tener canónica. */
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
     apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
   },
   openGraph: {
-    title: "GesLimpia — Limpiadoras de confianza en el Maresme",
+    title: "GesLimpia — Limpiadoras de confianza en la provincia de Barcelona",
     description:
       "Plataforma de conexión entre hogares y limpiadoras profesionales independientes.",
     type: "website",

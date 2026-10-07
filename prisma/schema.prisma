@@ -130,7 +130,7 @@ model Booking {
   cleanerUser   User     @relation("CleanerBookings", fields: [cleanerUserId], references: [id], onDelete: Cascade)
   date          DateTime
   hours         Float    @default(2)
-  status        String   @default("PENDIENTE") // "PENDIENTE" | "ACEPTADA" | "RECHAZADA" | "COMPLETADA"
+  status        String   @default("PENDIENTE") // "PENDIENTE" | "ACEPTADA" | "RECHAZADA" | "COMPLETADA" | "CANCELADA" (la cancela el hogar)
   notes         String   @default("")
   createdAt     DateTime @default(now())
 

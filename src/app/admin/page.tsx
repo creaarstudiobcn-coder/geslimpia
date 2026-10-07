@@ -1,14 +1,23 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { PLANES, type PlanId, eur } from "@/lib/constants";
-import { AdminHeader, StatCard, Badge, statusTone } from "@/components/admin/AdminUi";
+import {
+  AdminHeader,
+  StatCard,
+  Badge,
+  statusTone,
+  statusLabel,
+} from "@/components/admin/AdminUi";
+import { subscriptionIsActive } from "@/lib/suscripcion";
+import { fechaMedia } from "@/lib/fechas";
+
+export const metadata = { title: "Resumen · Admin · GesLimpia" };
 
 export default async function AdminDashboard() {
-  const [homes, cleaners, activeSubs, recentBookings, activeSubList] =
+  const [homes, cleaners, recentBookings, activaList] =
     await Promise.all([
       prisma.user.count({ where: { role: "HOGAR" } }),
       prisma.user.count({ where: { role: "LIMPIADORA" } }),
-      prisma.subscription.count({ where: { status: "ACTIVA" } }),
       prisma.booking.findMany({
         orderBy: { createdAt: "desc" },
         take: 8,
@@ -19,9 +28,21 @@ export default async function AdminDashboard() {
       }),
       prisma.subscription.findMany({
         where: { status: "ACTIVA" },
-        select: { plan: true },
+        select: {
+          plan: true,
+          status: true,
+          currentPeriodStart: true,
+          currentPeriodEnd: true,
+          cancelAtPeriodEnd: true,
+          createdAt: true,
+        },
       }),
     ]);
+
+  // Activas de verdad (mismo criterio que el acceso): una fila ACTIVA con el
+  // periodo vencido no paga ni cuenta.
+  const activeSubList = activaList.filter((s) => subscriptionIsActive(s));
+  const activeSubs = activeSubList.length;
 
   // Ingresos recurrentes estimados (MRR) a partir de las suscripciones activas
   // y el precio de cada plan. No es un cobro real de Stripe: es lo que factura la
@@ -75,15 +96,11 @@ export default async function AdminDashboard() {
                     {b.cleanerUser.name}
                   </span>
                   <p className="text-xs text-slate-400">
-                    {b.date.toLocaleDateString("es-ES", {
-                      day: "2-digit",
-                      month: "short",
-                      year: "numeric",
-                    })}{" "}
+                    {fechaMedia(b.date)}{" "}
                     · {b.hours} h
                   </p>
                 </div>
-                <Badge tone={statusTone(b.status)}>{b.status}</Badge>
+                <Badge tone={statusTone(b.status)}>{statusLabel(b.status)}</Badge>
               </div>
             ))}
           </div>

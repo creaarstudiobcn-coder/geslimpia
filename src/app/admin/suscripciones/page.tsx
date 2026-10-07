@@ -1,6 +1,16 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { AdminHeader, Badge, statusTone } from "@/components/admin/AdminUi";
+import {
+  AdminHeader,
+  Badge,
+  estadoSuscripcion,
+  planLabel,
+  statusLabel,
+  statusTone,
+} from "@/components/admin/AdminUi";
+import { fechaCorta } from "@/lib/fechas";
+
+export const metadata = { title: "Suscripciones · Admin · GesLimpia" };
 
 export default async function AdminSuscripciones({
   searchParams,
@@ -22,7 +32,7 @@ export default async function AdminSuscripciones({
       />
 
       <form className="mb-5 flex gap-3">
-        <select name="estado" defaultValue={estado} className="input max-w-xs">
+        <select name="estado" defaultValue={estado} className="input min-w-0 max-w-xs flex-1">
           <option value="">Todos los estados</option>
           <option value="ACTIVA">Activas</option>
           <option value="PENDIENTE">Pendientes</option>
@@ -41,22 +51,29 @@ export default async function AdminSuscripciones({
               key={s.id}
               className="flex flex-wrap items-center justify-between gap-2 p-4 text-sm"
             >
-              <div className="min-w-0">
+              {/* flex-1 + min-w-0: sin ellos el bloque mide lo que su texto y
+                  el email largo desbordaba la pantalla en móvil (375 px). */}
+              <div className="min-w-0 flex-1">
                 <Link
                   href={`/admin/hogares/${s.user.id}`}
-                  className="font-medium text-petroleo hover:text-agua"
+                  className="block truncate font-medium text-petroleo hover:text-agua"
                 >
                   {s.user.name}
                 </Link>
                 <p className="truncate text-xs text-slate-400">
-                  {s.user.email} · Plan {s.plan}
-                  {s.currentPeriodEnd
-                    ? ` · renueva ${s.currentPeriodEnd.toLocaleDateString("es-ES")}`
+                  {s.user.email} · Plan {planLabel(s.plan)}
+                  {s.currentPeriodEnd && s.status !== "CANCELADA"
+                    ? s.cancelAtPeriodEnd
+                      ? ` · termina el ${fechaCorta(s.currentPeriodEnd)}`
+                      : ` · renueva ${fechaCorta(s.currentPeriodEnd)}`
                     : ""}
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-3">
-                <Badge tone={statusTone(s.status)}>{s.status}</Badge>
+                <Badge tone={statusTone(estadoSuscripcion(s))}>
+                  {statusLabel(estadoSuscripcion(s))}
+                  {s.cancelAtPeriodEnd && s.status === "ACTIVA" ? " · baja programada" : ""}
+                </Badge>
                 {s.stripeCustomerId && (
                   <a
                     href={`https://dashboard.stripe.com/customers/${s.stripeCustomerId}`}

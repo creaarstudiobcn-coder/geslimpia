@@ -33,7 +33,6 @@ export default async function OnboardingPage() {
                 bio: p?.bio ?? "",
                 hourlyRate: p?.hourlyRate ?? 12,
                 availability: p?.availability ?? "",
-                photoUrl: p?.photoUrl ?? "",
                 services: parseList(p?.services),
                 zones: parseList(p?.zones),
               }}

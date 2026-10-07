@@ -211,7 +211,7 @@ export default function RegisterPage() {
         <div className="card p-8">
           <h1 className="text-2xl font-bold text-petroleo">Crear cuenta</h1>
           <p className="mt-1 text-sm text-slate-500">
-            Únete a GesLimpia, la plataforma de conexión del Maresme.
+            Únete a GesLimpia, la plataforma de conexión de la provincia de Barcelona.
           </p>
           <div className="mt-6">
             <Suspense fallback={null}>
