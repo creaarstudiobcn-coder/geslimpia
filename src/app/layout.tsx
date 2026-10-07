@@ -24,7 +24,8 @@ export const metadata: Metadata = {
   ),
   // metadataBase por sí solo NO emite <link rel="canonical">: hace falta
   // declararla. Sin ella el ápex y el www compiten por la misma página.
-  alternates: { canonical: "/" },
+  // "./" = cada página se apunta a sí misma; con "/" todas heredaban la portada.
+  alternates: { canonical: "./" },
   applicationName: "GesLimpia",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
