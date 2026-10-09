@@ -10,7 +10,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const estaticas: MetadataRoute.Sitemap = [
     { url: absoluteUrl("/"), changeFrequency: "weekly", priority: 1 },
     { url: absoluteUrl("/zonas"), changeFrequency: "weekly", priority: 0.9 },
-    { url: absoluteUrl("/register"), changeFrequency: "monthly", priority: 0.6 },
     { url: absoluteUrl("/terminos"), changeFrequency: "yearly", priority: 0.2 },
     { url: absoluteUrl("/privacidad"), changeFrequency: "yearly", priority: 0.2 },
   ];
